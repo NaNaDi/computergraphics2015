@@ -85,13 +85,11 @@ int main(int argc, char* argv[]) {
     std::exit(EXIT_FAILURE);  
   }
 
-//on MacOS, set OGL version explicitly 
-#ifdef __APPLE__
+  // set OGL version explicitly 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#endif
 
   // create window, if unsuccessfull, quit
   window = glfwCreateWindow(window_width, window_height, "OpenGL Framework", NULL, NULL);
