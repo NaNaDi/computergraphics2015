@@ -43,6 +43,8 @@ unsigned frames_per_second = 0;
 GLuint simple_program = 0;
 
 // cpu representation of model
+model sun_model{};
+model moon_model{};
 model planet_model{};
 model planet_model2{};
 model planet_model3{};
@@ -61,6 +63,8 @@ struct model_object {
 };
 
 // creating planets
+model_object sun_object;
+model_object moon_object;
 model_object planet_object;
 model_object planet_object2;
 model_object planet_object3;
@@ -75,7 +79,7 @@ model_object planets[8] = {planet_object,planet_object2,planet_object3,planet_ob
 
 
 // camera matrices
-glm::mat4 camera_view = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 4.0f});
+glm::mat4 camera_view = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 40.0f});
 glm::mat4 camera_projection{1.0f};
 
 // uniform locations
@@ -185,7 +189,72 @@ int main(int argc, char* argv[]) {
 // load models
 void initialize_geometry() {
     
+    //Create Sun seperately from planets and moon
+    sun_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
+    
+    // generate vertex array object
+    glGenVertexArrays(1, &sun_object.vertex_AO);
+    // bind the array for attaching buffers
+    glBindVertexArray(sun_object.vertex_AO);
+    
+    // generate generic buffer
+    glGenBuffers(1, &sun_object.vertex_BO);
+    // bind this as an vertex array buffer containing all attributes
+    glBindBuffer(GL_ARRAY_BUFFER, sun_object.vertex_BO);
+    // configure currently bound array buffer
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sun_model.data.size(), sun_model.data.data(), GL_STATIC_DRAW);
+    
+    // activate first attribute on gpu
+    glEnableVertexAttribArray(0);
+    // first attribute is 3 floats with no offset & stride
+    glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, sun_model.vertex_bytes, sun_model.offsets[model::POSITION]);
+    // activate second attribute on gpu
+    glEnableVertexAttribArray(1);
+    // second attribute is 3 floats with no offset & stride
+    glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, sun_model.vertex_bytes, sun_model.offsets[model::NORMAL]);
+    
+    // generate generic buffer
+    glGenBuffers(1, &sun_object.element_BO);
+    // bind this as an vertex array buffer containing all attributes
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sun_object.element_BO);
+    // configure currently bound array buffer
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * sun_model.indices.size(), sun_model.indices.data(), GL_STATIC_DRAW);
+    
+    //Create Moon seperately from planets and sun
+    moon_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
+    
+    // generate vertex array object
+    glGenVertexArrays(1, &moon_object.vertex_AO);
+    // bind the array for attaching buffers
+    glBindVertexArray(moon_object.vertex_AO);
+    
+    // generate generic buffer
+    glGenBuffers(1, &moon_object.vertex_BO);
+    // bind this as an vertex array buffer containing all attributes
+    glBindBuffer(GL_ARRAY_BUFFER, moon_object.vertex_BO);
+    // configure currently bound array buffer
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * moon_model.data.size(), moon_model.data.data(), GL_STATIC_DRAW);
+    
+    // activate first attribute on gpu
+    glEnableVertexAttribArray(0);
+    // first attribute is 3 floats with no offset & stride
+    glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, moon_model.vertex_bytes, moon_model.offsets[model::POSITION]);
+    // activate second attribute on gpu
+    glEnableVertexAttribArray(1);
+    // second attribute is 3 floats with no offset & stride
+    glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, moon_model.vertex_bytes, moon_model.offsets[model::NORMAL]);
+    
+    // generate generic buffer
+    glGenBuffers(1, &moon_object.element_BO);
+    // bind this as an vertex array buffer containing all attributes
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, moon_object.element_BO);
+    // configure currently bound array buffer
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * moon_model.indices.size(), moon_model.indices.data(), GL_STATIC_DRAW);
+    
+    
+    //For Loop to create planets
     for (int i = 0; i < 8; i = i + 1){
+        
   planet_models[i] = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
 
   // generate vertex array object
@@ -220,10 +289,64 @@ void initialize_geometry() {
 ///////////////////////////// render functions ////////////////////////////////
 // render model
 void render() {
-    for (int i = 0; i < 8; i = i + 1){
+    
+    //sun is rendered
+    glm::mat4 model_matrix = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 0.0f});
+    model_matrix = glm::scale(model_matrix, glm::vec3{2.0f, 2.0f, 2.0f});
+    glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix));
+    // extra matrix for normal transformation to keep them orthogonal to surface
+    glm::mat4 normal_matrix = glm::inverseTranspose(camera_view * model_matrix);
+   glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
+    
+    
+    glBindVertexArray(sun_object.vertex_AO);
+    utils::validate_program(simple_program);
+    glDrawElements(GL_TRIANGLES, GLsizei(sun_model.indices.size()), model::INDEX.type, NULL);
+    
+    
+    //earth treated differently
+    glm::mat4 earth_matrix = glm::rotate(glm::mat4{}, float(glfwGetTime()+3), glm::vec3{0.0f, 1.0f, 0.0f});
+    earth_matrix = glm::translate(earth_matrix, glm::vec3{4.0f +4*3, 0.0f, -1.0f});
+    glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(earth_matrix));
+    // extra matrix for normal transformation to keep them orthogonal to surface
+    glm::mat4 normal_earth_matrix = glm::inverseTranspose(camera_view * earth_matrix);
+    glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_earth_matrix));
+    
+    
+    glBindVertexArray(planets[3].vertex_AO);
+    utils::validate_program(simple_program);
+    // draw bound vertex array as triangles using bound shader
+    glDrawElements(GL_TRIANGLES, GLsizei(planet_models[3].indices.size()), model::INDEX.type, NULL);
 
-  glm::mat4 model_matrix = glm::rotate(glm::mat4{}, float(glfwGetTime()), glm::vec3{0.0f, 1.0f, 0.0f});
-  model_matrix = glm::translate(model_matrix, glm::vec3{0.0f +4*i, 0.0f, -1.0f});
+    
+    
+    //moon is rendered
+    glm::mat4 model_matrix2;
+    
+   // model_matrix2 = glm::translate(model_matrix2, glm::vec3{7.0f, 7.0f, 8.0f});
+    model_matrix2 = glm::rotate(earth_matrix, float(glfwGetTime()), glm::vec3{0.0f, 1.0f, 0.0f});
+    model_matrix2 = glm::translate(model_matrix2, glm::vec3{2.0f, 0.0f, 0.0f});
+    model_matrix2 = glm::scale(model_matrix2, glm::vec3{0.5f, 0.5f, 0.5f});
+    
+    
+    
+    glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix2));
+    // extra matrix for normal transformation to keep them orthogonal to surface
+    glm::mat4 normal_matrix2 = glm::inverseTranspose(camera_view * model_matrix2);
+    glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix2));
+    
+    glBindVertexArray(moon_object.vertex_AO);
+    utils::validate_program(simple_program);
+    glDrawElements(GL_TRIANGLES, GLsizei(moon_model.indices.size()), model::INDEX.type, NULL);
+    
+    
+
+    
+    //planetes except earth are rendered
+    for (int i = 0; i < 8; i = i + 1){
+        if (i != 3){
+  glm::mat4 model_matrix = glm::rotate(glm::mat4{}, float(glfwGetTime()+i), glm::vec3{0.0f, 1.0f, 0.0f});
+  model_matrix = glm::translate(model_matrix, glm::vec3{4.0f +4*i, 0.0f, -1.0f});
   glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix));
   // extra matrix for normal transformation to keep them orthogonal to surface
   glm::mat4 normal_matrix = glm::inverseTranspose(camera_view * model_matrix);
@@ -234,8 +357,8 @@ void render() {
   utils::validate_program(simple_program);
   // draw bound vertex array as triangles using bound shader
   glDrawElements(GL_TRIANGLES, GLsizei(planet_models[i].indices.size()), model::INDEX.type, NULL);
-    }
-}
+        }
+    }}
 
 ///////////////////////////// update functions ////////////////////////////////
 // update viewport and field of view
@@ -250,7 +373,7 @@ void update_view(GLFWwindow* window, int width, int height) {
     fov_y = 2.0f * glm::atan(glm::tan(camera_fov * 0.5f) * (1.0f / aspect));
   }
   // projection is hor+ 
-  camera_projection = glm::perspective(fov_y, aspect, 0.1f, 10.0f);
+  camera_projection = glm::perspective(fov_y, aspect, 0.1f, 100000.0f);
   // upload matrix to gpu
   glUniformMatrix4fv(location_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
 }
