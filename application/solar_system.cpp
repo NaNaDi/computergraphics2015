@@ -422,6 +422,10 @@ void update_uniform_locations() {
 
 ///////////////////////////// misc functions ////////////////////////////////
 // handle key input
+//Use Q and E for vertical movement of the camera
+//Use A and D for horizontal movement of the camera
+//Use UP and DOWN for horizontal rotation of the camera
+//Use W and S for movement in the depth of the camera
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
   if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, 1);
@@ -430,12 +434,36 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     update_shader_programs();
   }
   else if(key == GLFW_KEY_W && action == GLFW_PRESS) {
-    camera_view = glm::translate(camera_view, glm::vec3{0.0f, 0.0f, -0.1f});
+    camera_view = glm::translate(camera_view, glm::vec3{0.0f, 0.0f, -10.0f});
     update_camera();
   }
   else if(key == GLFW_KEY_S && action == GLFW_PRESS) {
-    camera_view = glm::translate(camera_view, glm::vec3{0.0f, 0.0f, 0.1f});
+    camera_view = glm::translate(camera_view, glm::vec3{0.0f, 0.0f, 10.0f});
     update_camera();
+  }
+  else if(key == GLFW_KEY_Q && action == GLFW_PRESS){
+      camera_view = glm::translate(camera_view, glm::vec3{0.0f, 2.0f, 0.0f});
+      update_camera();
+  }
+  else if(key == GLFW_KEY_E && action == GLFW_PRESS){
+      camera_view = glm::translate(camera_view, glm::vec3{0.0f, -2.0f, 0.0f});
+      update_camera();
+  }
+  else if(key == GLFW_KEY_A && action == GLFW_PRESS){
+      camera_view = glm::translate(camera_view, glm::vec3{-2.0f, 0.0f, 0.0f});
+      update_camera();
+  }
+  else if(key == GLFW_KEY_D && action == GLFW_PRESS){
+      camera_view = glm::translate(camera_view, glm::vec3{2.0f, 0.0f, 0.0f});
+      update_camera();
+  }
+  else if (key == GLFW_KEY_DOWN && action == GLFW_PRESS){
+      camera_view = glm::rotate(camera_view, float(0.1), glm::vec3{1.0f, 0.0f, 0.0f});
+    update_camera();
+    }
+  else if (key == GLFW_KEY_UP && action == GLFW_PRESS){
+      camera_view = glm::rotate(camera_view, float(-0.1), glm::vec3{1.0f, 0.0f, 0.0f});
+      update_camera();
   }
 }
 
