@@ -54,7 +54,9 @@ model planet_model6{};
 model planet_model7{};
 model planet_model8{};
 
+//putting planet_models in array
 model planet_models[8] = {planet_model,planet_model2,planet_model3,planet_model4,planet_model5,planet_model6,planet_model7,planet_model8};
+
 // holds gpu representation of model
 struct model_object {
   GLuint vertex_AO = 0;
@@ -74,7 +76,7 @@ model_object planet_object6;
 model_object planet_object7;
 model_object planet_object8;
 
-
+//putting planet_objects in array
 model_object planets[8] = {planet_object,planet_object2,planet_object3,planet_object4,planet_object5,planet_object6,planet_object7,planet_object8};
 
 
@@ -294,6 +296,7 @@ void render() {
     glm::mat4 model_matrix = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 0.0f});
     model_matrix = glm::scale(model_matrix, glm::vec3{2.0f, 2.0f, 2.0f});
     glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix));
+    
     // extra matrix for normal transformation to keep them orthogonal to surface
     glm::mat4 normal_matrix = glm::inverseTranspose(camera_view * model_matrix);
    glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
@@ -308,6 +311,7 @@ void render() {
     glm::mat4 earth_matrix = glm::rotate(glm::mat4{}, float(glfwGetTime()+3), glm::vec3{0.0f, 1.0f, 0.0f});
     earth_matrix = glm::translate(earth_matrix, glm::vec3{4.0f +4*3, 0.0f, -1.0f});
     glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(earth_matrix));
+    
     // extra matrix for normal transformation to keep them orthogonal to surface
     glm::mat4 normal_earth_matrix = glm::inverseTranspose(camera_view * earth_matrix);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_earth_matrix));
@@ -315,6 +319,7 @@ void render() {
     
     glBindVertexArray(planets[3].vertex_AO);
     utils::validate_program(simple_program);
+    
     // draw bound vertex array as triangles using bound shader
     glDrawElements(GL_TRIANGLES, GLsizei(planet_models[3].indices.size()), model::INDEX.type, NULL);
 
@@ -323,7 +328,7 @@ void render() {
     //moon is rendered
     glm::mat4 model_matrix2;
     
-   // model_matrix2 = glm::translate(model_matrix2, glm::vec3{7.0f, 7.0f, 8.0f});
+    //moon is circulationg around earth_matrix
     model_matrix2 = glm::rotate(earth_matrix, float(glfwGetTime()), glm::vec3{0.0f, 1.0f, 0.0f});
     model_matrix2 = glm::translate(model_matrix2, glm::vec3{2.0f, 0.0f, 0.0f});
     model_matrix2 = glm::scale(model_matrix2, glm::vec3{0.5f, 0.5f, 0.5f});
@@ -331,6 +336,7 @@ void render() {
     
     
     glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix2));
+    
     // extra matrix for normal transformation to keep them orthogonal to surface
     glm::mat4 normal_matrix2 = glm::inverseTranspose(camera_view * model_matrix2);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix2));
@@ -348,6 +354,7 @@ void render() {
   glm::mat4 model_matrix = glm::rotate(glm::mat4{}, float(glfwGetTime()+i), glm::vec3{0.0f, 1.0f, 0.0f});
   model_matrix = glm::translate(model_matrix, glm::vec3{4.0f +4*i, 0.0f, -1.0f});
   glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix));
+            
   // extra matrix for normal transformation to keep them orthogonal to surface
   glm::mat4 normal_matrix = glm::inverseTranspose(camera_view * model_matrix);
   glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
@@ -355,10 +362,12 @@ void render() {
 
   glBindVertexArray(planets[i].vertex_AO);
   utils::validate_program(simple_program);
+            
   // draw bound vertex array as triangles using bound shader
   glDrawElements(GL_TRIANGLES, GLsizei(planet_models[i].indices.size()), model::INDEX.type, NULL);
         }
-    }}
+    }
+}
 
 ///////////////////////////// update functions ////////////////////////////////
 // update viewport and field of view
