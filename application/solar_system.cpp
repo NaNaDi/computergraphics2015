@@ -50,16 +50,6 @@ model sun_model{};
 model moon_model{};
 model star_model{};
 model planet_model{};
-model planet_model2{};
-model planet_model3{};
-model planet_model4{};
-model planet_model5{};
-model planet_model6{};
-model planet_model7{};
-model planet_model8{};
-
-//putting planet_models in array
-model planet_models[8] = {planet_model,planet_model2,planet_model3,planet_model4,planet_model5,planet_model6,planet_model7,planet_model8};
 
 // holds gpu representation of model
 struct model_object {
@@ -194,177 +184,11 @@ int main(int argc, char* argv[]) {
 
 ///////////////////////// initialisation functions ////////////////////////////
 // load models
-void initialize_geometry_old() {
-    
-    //Create Sun seperately from planets and moon
-    sun_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
-    
-    // generate vertex array object
-    glGenVertexArrays(1, &sun_object.vertex_AO);
-    // bind the array for attaching buffers
-    glBindVertexArray(sun_object.vertex_AO);
-    
-    // generate generic buffer
-    glGenBuffers(1, &sun_object.vertex_BO);
-    // bind this as an vertex array buffer containing all attributes
-    glBindBuffer(GL_ARRAY_BUFFER, sun_object.vertex_BO);
-    // configure currently bound array buffer
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sun_model.data.size(), sun_model.data.data(), GL_STATIC_DRAW);
-    
-    // activate first attribute on gpu
-    glEnableVertexAttribArray(0);
-    // first attribute is 3 floats with no offset & stride
-    glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, sun_model.vertex_bytes, sun_model.offsets[model::POSITION]);
-    // activate second attribute on gpu
-    glEnableVertexAttribArray(1);
-    // second attribute is 3 floats with no offset & stride
-    glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, sun_model.vertex_bytes, sun_model.offsets[model::NORMAL]);
-    
-    // generate generic buffer
-    glGenBuffers(1, &sun_object.element_BO);
-    // bind this as an vertex array buffer containing all attributes
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sun_object.element_BO);
-    // configure currently bound array buffer
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * sun_model.indices.size(), sun_model.indices.data(), GL_STATIC_DRAW);
-    
-    //Create Moon seperately from planets and sun
-    moon_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
-    
-    // generate vertex array object
-    glGenVertexArrays(1, &moon_object.vertex_AO);
-    // bind the array for attaching buffers
-    glBindVertexArray(moon_object.vertex_AO);
-    
-    // generate generic buffer
-    glGenBuffers(1, &moon_object.vertex_BO);
-    // bind this as an vertex array buffer containing all attributes
-    glBindBuffer(GL_ARRAY_BUFFER, moon_object.vertex_BO);
-    // configure currently bound array buffer
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * moon_model.data.size(), moon_model.data.data(), GL_STATIC_DRAW);
-    
-    // activate first attribute on gpu
-    glEnableVertexAttribArray(0);
-    // first attribute is 3 floats with no offset & stride
-    glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, moon_model.vertex_bytes, moon_model.offsets[model::POSITION]);
-    // activate second attribute on gpu
-    glEnableVertexAttribArray(1);
-    // second attribute is 3 floats with no offset & stride
-    glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, moon_model.vertex_bytes, moon_model.offsets[model::NORMAL]);
-    
-    // generate generic buffer
-    glGenBuffers(1, &moon_object.element_BO);
-    // bind this as an vertex array buffer containing all attributes
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, moon_object.element_BO);
-    // configure currently bound array buffer
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * moon_model.indices.size(), moon_model.indices.data(), GL_STATIC_DRAW);
-    
-    
-    //For Loop to create planets
-    for (int i = 0; i < 8; i = i + 1){
-        
-  planet_models[i] = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
 
-  // generate vertex array object
-  glGenVertexArrays(1, &planets[i].vertex_AO);
-  // bind the array for attaching buffers
-  glBindVertexArray(planets[i].vertex_AO);
-
-  // generate generic buffer
-  glGenBuffers(1, &planets[i].vertex_BO);
-  // bind this as an vertex array buffer containing all attributes
-  glBindBuffer(GL_ARRAY_BUFFER, planets[i].vertex_BO);
-  // configure currently bound array buffer
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * planet_models[i].data.size(), planet_models[i].data.data(), GL_STATIC_DRAW);
-
-  // activate first attribute on gpu
-  glEnableVertexAttribArray(0);
-  // first attribute is 3 floats with no offset & stride
-  glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, planet_models[i].vertex_bytes, planet_models[i].offsets[model::POSITION]);
-  // activate second attribute on gpu
-  glEnableVertexAttribArray(1);
-  // second attribute is 3 floats with no offset & stride
-  glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, planet_models[i].vertex_bytes, planet_models[i].offsets[model::NORMAL]);
-
-   // generate generic buffer
-  glGenBuffers(1, &planets[i].element_BO);
-  // bind this as an vertex array buffer containing all attributes
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planets[i].element_BO);
-  // configure currently bound array buffer
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * planet_models[i].indices.size(), planet_models[i].indices.data(), GL_STATIC_DRAW);
-    }
-
-    // create stars
-    for (int i = 1; i<=nStars; i++){
-        // generate vertex array object
-        glGenVertexArrays(1, &star_object.vertex_AO);
-        // bind the array for attaching buffers
-        glBindVertexArray(star_object.vertex_AO);
-        
-        // generate generic buffer
-        glGenBuffers(1, &star_object.vertex_BO);
-        // bind this as an vertex array buffer containing all attributes
-        glBindBuffer(GL_ARRAY_BUFFER, star_object.vertex_BO);
-        // configure currently bound array buffer
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * star_model.data.size(), star_model.data.data(), GL_STATIC_DRAW);
-        
-        // activate first attribute on gpu
-        glEnableVertexAttribArray(0);
-        // first attribute is 3 floats with no offset & stride
-        glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, star_model.vertex_bytes, star_model.offsets[model::POSITION]);
-        // activate second attribute on gpu
-        glEnableVertexAttribArray(1);
-        // second attribute is 3 floats with no offset & stride
-        glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, star_model.vertex_bytes, star_model.offsets[model::NORMAL]);
-        
-        // generate generic buffer
-        glGenBuffers(1, &star_object.element_BO);
-        // bind this as an vertex array buffer containing all attributes
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, star_object.element_BO);
-        // configure currently bound array buffer
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * star_model.indices.size(), star_model.indices.data(), GL_STATIC_DRAW);
-    }
-
-
-
-}
 
 void initialize_geometry() {
     planet_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
     
-    //Create Sun seperately from planets and moon
-    sun_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
-    
-    // generate vertex array object
-    glGenVertexArrays(1, &sun_object.vertex_AO);
-    // bind the array for attaching buffers
-    glBindVertexArray(sun_object.vertex_AO);
-    
-    // generate generic buffer
-    glGenBuffers(1, &sun_object.vertex_BO);
-    // bind this as an vertex array buffer containing all attributes
-    glBindBuffer(GL_ARRAY_BUFFER, sun_object.vertex_BO);
-    // configure currently bound array buffer
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sun_model.data.size(), sun_model.data.data(), GL_STATIC_DRAW);
-    
-    // activate first attribute on gpu
-    glEnableVertexAttribArray(0);
-    // first attribute is 3 floats with no offset & stride
-    glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, sun_model.vertex_bytes, sun_model.offsets[model::POSITION]);
-    // activate second attribute on gpu
-    glEnableVertexAttribArray(1);
-    // second attribute is 3 floats with no offset & stride
-    glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, sun_model.vertex_bytes, sun_model.offsets[model::NORMAL]);
-    
-    // generate generic buffer
-    glGenBuffers(1, &sun_object.element_BO);
-    // bind this as an vertex array buffer containing all attributes
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sun_object.element_BO);
-    // configure currently bound array buffer
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * sun_model.indices.size(), sun_model.indices.data(), GL_STATIC_DRAW);
-    
-    //Create Moon seperately from planets and sun
-    moon_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
-    
     // generate vertex array object
     glGenVertexArrays(1, &moon_object.vertex_AO);
     // bind the array for attaching buffers
@@ -393,8 +217,6 @@ void initialize_geometry() {
     // configure currently bound array buffer
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * moon_model.indices.size(), moon_model.indices.data(), GL_STATIC_DRAW);
     
-    
-
     
     // generate vertex array object
     glGenVertexArrays(1, &planet_object.vertex_AO);
@@ -454,10 +276,8 @@ void render() {
     glm::mat4 normal_matrix = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix);
    glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
     
-    
-    glBindVertexArray(sun_object.vertex_AO);
-    utils::validate_program(simple_program);
-    glDrawElements(GL_TRIANGLES, GLsizei(sun_model.indices.size()), model::INDEX.type, NULL);
+
+    glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
     
     
     //earth treated differently
@@ -469,9 +289,7 @@ void render() {
     glm::mat4 normal_earth_matrix = glm::inverseTranspose(glm::inverse(camera_view) * earth_matrix);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_earth_matrix));
     
-    
-    //glBindVertexArray(planets[3].vertex_AO);
-    //utils::validate_program(simple_program);
+
     
     // draw bound vertex array as triangles using bound shader
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
@@ -494,10 +312,7 @@ void render() {
     glm::mat4 normal_matrix2 = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix2);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix2));
     
-    glBindVertexArray(moon_object.vertex_AO);
-    utils::validate_program(simple_program);
-    glDrawElements(GL_TRIANGLES, GLsizei(moon_model.indices.size()), model::INDEX.type, NULL);
-    
+    glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
     
 
     
