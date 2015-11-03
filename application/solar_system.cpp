@@ -187,24 +187,24 @@ int main(int argc, char* argv[]) {
 
 
 void initialize_geometry() {
-    planet_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
+    planet_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL); //load object
     
     // generate vertex array object
-    glGenVertexArrays(1, &moon_object.vertex_AO);
+    glGenVertexArrays(1, &moon_object.vertex_AO); //glGenVertexArrays(GLsizei number_of_vertex_arrays_to_generate, GLuint array_in_which_generated_names_are_stored){generates vertex array object names}
     // bind the array for attaching buffers
-    glBindVertexArray(moon_object.vertex_AO);
+    glBindVertexArray(moon_object.vertex_AO); //glBindVertexArray(GLuint name_of_array_to_bind){binds a vertex array object with it's name}
     
     // generate generic buffer
-    glGenBuffers(1, &moon_object.vertex_BO);
+    glGenBuffers(1, &moon_object.vertex_BO); //generate buffer object names (siehe glGenVertexArrays)
     // bind this as an vertex array buffer containing all attributes
-    glBindBuffer(GL_ARRAY_BUFFER, moon_object.vertex_BO);
+    glBindBuffer(GL_ARRAY_BUFFER, moon_object.vertex_BO); //binds named buffer object (siehe glBindVertexArray)
     // configure currently bound array buffer
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * moon_model.data.size(), moon_model.data.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * moon_model.data.size(), moon_model.data.data(), GL_STATIC_DRAW); //glBufferData(GLenum target_buffer_object, GLsizeiptr size_in_bytes_for_buffer_objects_new_datastore, const GLvoid data, GLenum expected_usage_pattern_of_data){creates and initializes a buffer object's datastore}
     
     // activate first attribute on gpu
-    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(0); //glEnableVertexAttribArray(GLuint index_of_generic_vertex_attribute){enables generic vertex attribute array}
     // first attribute is 3 floats with no offset & stride
-    glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, moon_model.vertex_bytes, moon_model.offsets[model::POSITION]);
+    glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, moon_model.vertex_bytes, moon_model.offsets[model::POSITION]); //glVertexAttribPointer(GLuint index_of_generic_vertex_attribute, GLint specifies_number_of_components_per_generic_vertex_attribute[must be 1,2,3 or 4], GLenum datatype_of_each_component, GLboolean should_be_normalized[true]_or_converted_directly_as_fixed-point_values[false], GLsizei offset_between_consecutive_generic_vertex_array_attributes, const GLpointer offset_of_first_component_of_first_generic_vertex_attribute){define an array of generic vertex attribute data}
     // activate second attribute on gpu
     glEnableVertexAttribArray(1);
     // second attribute is 3 floats with no offset & stride
