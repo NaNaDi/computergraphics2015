@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
 
 
 void initialize_geometry() {
-    
+
     
     planet_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
     
