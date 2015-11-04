@@ -41,21 +41,23 @@ unsigned frames_per_second = 0;
 
 //Generate Random Numbers
 float generateRandom();
-int nStars = 0;
+int nStars = 20;
+
+GLfloat star_positions [60] {-4.2,-31.9,4.6,18.8,5.9,-46.8,23.2,-40.3,30,-30.5,47.3,-3.1,-43.6,-49.3,-34,29.5,-4.6,-11.9,43.7,-14.8,20.7,26.8,-20.2,-44,-36.9,29,-27.1,-43.1,-20.9,18.8,-1.4,-17.5,41.4,-45.3,-38,22.4,-30.6,-24.7,17.4,-33.9,-11.3,-6.4,-46.2,-35,-28.1,42.1,11.1,39.9,-5,12.3,-15.5,-20.5,-49.7,34.8,2.5,41.4,19.2,-6.3,4.9,-30.7};
 // the main shader program
 GLuint simple_program = 0;
-
+GLuint stars_program = 0;
 // cpu representation of model
 model sun_model{};
 model moon_model{};
 model star_model{};
 model planet_model{};
 
-typedef struct
-{
-    float xPos, yPos ,zPos;
-    float r , g, b;
-}stars;
+//typedef struct
+//{
+//    float xPos, yPos ,zPos;
+//    float r , g, b;
+//}stars;
 
 // holds gpu representation of model
 struct model_object {
@@ -63,6 +65,12 @@ struct model_object {
   GLuint vertex_BO = 0;
   GLuint element_BO = 0;
 };
+
+struct model_star_object {
+    GLuint vertex_AO = 0;
+    GLuint vertex_BO = 0;
+};
+model_star_object stars_object;
 
 // creating planets
 model_object sun_object;
@@ -99,7 +107,9 @@ void quit(int status);
 void update_view(GLFWwindow* window, int width, int height);
 void update_camera();
 void update_uniform_locations();
+void update_uniform_star_locations();
 void update_shader_programs();
+void update_starshaders();
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void initialize_geometry();
 void show_fps();
@@ -157,6 +167,7 @@ int main(int argc, char* argv[]) {
 
   // do before framebuffer_resize call as it requires the projection uniform location
   update_shader_programs();
+    update_starshaders();
 
   // initialize projection and view matrices
   int width, height;
@@ -224,11 +235,24 @@ void initialize_geometry() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planet_object.element_BO);
     // configure currently bound array buffer
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * planet_model.indices.size(), planet_model.indices.data(), GL_STATIC_DRAW);
+
+
+//initialize stars
+    // Create a Vector Buffer Object that will store the vertices on video memory
+    	GLuint vbo;
+     	glGenBuffers(1, &vbo);
+    
+     	// Allocate space and upload the data from CPU to GPU
+     	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+     	glBufferData(GL_ARRAY_BUFFER, sizeof(star_positions), star_positions, GL_STATIC_DRAW);
+
 }
 
 /////////////////////////////////////////////////////// render functions /////////////////////////////////////////////////////////////
 // render model
 void render() {
+    
+    
     
 
     
@@ -300,6 +324,15 @@ void render() {
   glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
         }
     }
+
+//    glUseProgram(stars_program);
+//    update_uniform_locations();
+//    update_camera();
+//    
+//    glUseProgram(stars_program);
+//    glBindVertexArray(stars_object.vertex_AO);
+//    glDrawArrays(GL_POINTS, 0, nStars);
+
 }
 
 ///////////////////////////// update functions ////////////////////////////////
@@ -342,6 +375,8 @@ void update_shader_programs() {
     glUseProgram(simple_program);
     // after shader is recompiled uniform locations may change
     update_uniform_locations();
+    update_uniform_star_locations();
+ 
 
     // upload view uniforms to new shader
     int width, height;
@@ -352,6 +387,37 @@ void update_shader_programs() {
   catch(std::exception&) {
     // dont crash, allow another try
   }
+}
+
+void update_starshaders() {
+    try {
+        // throws exception when compiling was unsuccessfull
+        GLuint new_stars_program = shader_loader::program(resource_path + "shaders/stars.vert",
+                                                         resource_path + "shaders/stars.frag");
+        
+        // free old shader
+        glDeleteProgram(stars_program);
+        // save new shader
+        stars_program = new_stars_program;
+        // bind shader
+        glUseProgram(stars_program);
+        update_uniform_star_locations();
+        
+        // upload view uniforms to new shader
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        update_view(window, width, height);
+        update_camera();
+    }
+    catch(std::exception&) {
+        // dont crash, allow another try
+    }
+}
+void update_uniform_star_locations() {
+//    location_normal_matrix = glGetUniformLocation(stars_program, "NormalMatrix");
+//    location_model_matrix = glGetUniformLocation(stars_program, "ModelMatrix");
+//    location_view_matrix = glGetUniformLocation(stars_program, "ViewMatrix");
+//    location_projection_matrix = glGetUniformLocation(stars_program, "ProjectionMatrix");
 }
 
 // update shader uniform locations
@@ -426,6 +492,8 @@ void show_fps() {
 void quit(int status) {
   // free opengl resources
   glDeleteProgram(simple_program);
+  glDeleteProgram(stars_program);
+
     for (int i = 0; i < 8; i = i + 1){
 
   glDeleteBuffers(1, &planets[i].vertex_BO);
@@ -439,8 +507,16 @@ void quit(int status) {
   std::exit(status);
 }
 
-float generateRandom(){
-    float randomNumber = -50.0f + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(50.0f+50.0f)));
-    return randomNumber;
 
+
+void generateRandom(GLfloat arr[])
+{
+    
+    
+    for (int i = 1; i < nStars*3; i++)
+    {
+        arr[i] = 1+ rand() % 10;
+    }
+    
 }
+
