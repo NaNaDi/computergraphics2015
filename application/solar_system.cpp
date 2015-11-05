@@ -324,14 +324,14 @@ void render() {
   glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
         }
     }
-
-//    glUseProgram(stars_program);
-//    update_uniform_locations();
-//    update_camera();
-//    
-//    glUseProgram(stars_program);
-//    glBindVertexArray(stars_object.vertex_AO);
-//    glDrawArrays(GL_POINTS, 0, nStars);
+//
+    glUseProgram(stars_program);
+    update_uniform_locations();
+    update_camera();
+    
+    glUseProgram(stars_program);
+    glBindVertexArray(stars_object.vertex_AO);
+    glDrawArrays(GL_POINTS, 0, nStars);
 
 }
 
@@ -416,6 +416,7 @@ void update_starshaders() {
 void update_uniform_star_locations() {
 //    location_normal_matrix = glGetUniformLocation(stars_program, "NormalMatrix");
 //    location_model_matrix = glGetUniformLocation(stars_program, "ModelMatrix");
+    
 //    location_view_matrix = glGetUniformLocation(stars_program, "ViewMatrix");
 //    location_projection_matrix = glGetUniformLocation(stars_program, "ProjectionMatrix");
 }
