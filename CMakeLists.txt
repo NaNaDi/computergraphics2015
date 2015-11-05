@@ -25,7 +25,7 @@ set(BUILD_SHARED_LIBS ${DYNAMIC_LINKING} CACHE BOOL "Build shared libraries" FOR
 
 
 #before adding libraries, define the output paths, MSVC automatically creates the build-type folders
-if(MSVC)
+if(MSVC OR CMAKE_GENERATOR STREQUAL Xcode)
   SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
   SET(LIBRARY_OUTPUT_PATH	 ${PROJECT_BINARY_DIR})
 else()

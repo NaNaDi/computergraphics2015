@@ -43,7 +43,9 @@ unsigned frames_per_second = 0;
 float generateRandom();
 int nStars = 20;
 
-GLfloat star_positions [60] {-4.2,-31.9,4.6,18.8,5.9,-46.8,23.2,-40.3,30,-30.5,47.3,-3.1,-43.6,-49.3,-34,29.5,-4.6,-11.9,43.7,-14.8,20.7,26.8,-20.2,-44,-36.9,29,-27.1,-43.1,-20.9,18.8,-1.4,-17.5,41.4,-45.3,-38,22.4,-30.6,-24.7,17.4,-33.9,-11.3,-6.4,-46.2,-35,-28.1,42.1,11.1,39.9,-5,12.3,-15.5,-20.5,-49.7,34.8,2.5,41.4,19.2,-6.3,4.9,-30.7};
+std::vector<GLfloat> stars{-4.2f,-31.9f,4.6f,18.8f,5.9f,-46.8f};
+
+
 // the main shader program
 GLuint simple_program = 0;
 GLuint stars_program = 0;
@@ -66,11 +68,7 @@ struct model_object {
   GLuint element_BO = 0;
 };
 
-struct model_star_object {
-    GLuint vertex_AO = 0;
-    GLuint vertex_BO = 0;
-};
-model_star_object stars_object;
+
 
 // creating planets
 model_object sun_object;
@@ -148,6 +146,7 @@ int main(int argc, char* argv[]) {
   // register resizing function
   glfwSetFramebufferSizeCallback(window, update_view);
 
+
   // initialize glindings in this context
   glbinding::Binding::initialize();
 
@@ -176,6 +175,7 @@ int main(int argc, char* argv[]) {
   update_camera();
 
   // set up models
+    star_model = model{stars, model::POSITION|model::NORMAL};
   initialize_geometry();
 
   // enable depth testing
@@ -236,15 +236,31 @@ void initialize_geometry() {
     // configure currently bound array buffer
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * planet_model.indices.size(), planet_model.indices.data(), GL_STATIC_DRAW);
 
-
-//initialize stars
-    // Create a Vector Buffer Object that will store the vertices on video memory
-    	GLuint vbo;
-     	glGenBuffers(1, &vbo);
     
-     	// Allocate space and upload the data from CPU to GPU
-     	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-     	glBufferData(GL_ARRAY_BUFFER, sizeof(star_positions), star_positions, GL_STATIC_DRAW);
+    
+    
+    // generate vertex array object
+    glGenVertexArrays(1, &star_object.vertex_AO);
+    // bind the array for attaching buffers
+    glBindVertexArray(star_object.vertex_AO);
+    
+    // generate generic buffer
+    glGenBuffers(1, &star_object.vertex_BO);
+    // bind this as an vertex array buffer containing all attributes
+    glBindBuffer(GL_ARRAY_BUFFER, star_object.vertex_BO);
+    // configure currently bound array buffer
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * star_model.data.size(), star_model.data.data(), GL_STATIC_DRAW);
+    
+    // activate first attribute on gpu
+    glEnableVertexAttribArray(0);
+    // first attribute is 3 floats with no offset & stride
+    glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, star_model.vertex_bytes, star_model.offsets[model::POSITION]);
+    // activate second attribute on gpu
+    glEnableVertexAttribArray(1);
+    // second attribute is 3 floats with no offset & stride
+    glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, star_model.vertex_bytes, star_model.offsets[model::NORMAL]);
+    
+
 
 }
 
@@ -254,6 +270,7 @@ void render() {
     
     
     
+    glBindVertexArray(planet_object.vertex_AO);
 
     
     //sun is rendered
@@ -324,14 +341,12 @@ void render() {
   glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
         }
     }
-//
-    glUseProgram(stars_program);
-    update_uniform_locations();
-    update_camera();
+    
+    
     
     glUseProgram(stars_program);
-    glBindVertexArray(stars_object.vertex_AO);
-    glDrawArrays(GL_POINTS, 0, nStars);
+    glBindVertexArray(star_object.vertex_AO);
+    glDrawArrays(gl::GL_POINTS, 0, star_model.vertex_num);
 
 }
 
