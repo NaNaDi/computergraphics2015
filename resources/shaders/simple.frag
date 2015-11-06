@@ -5,5 +5,5 @@ out vec4 out_Color;
 
 void main(void)
 {
-    out_Color = vec4(abs(pass_Normal.xyz), 1.0f);
+    out_Color = vec4(1.0f,0.64f,0.37f, 1.0f);
 }

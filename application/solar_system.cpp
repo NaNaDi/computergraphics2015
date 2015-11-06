@@ -40,10 +40,9 @@ double last_second_time = 0;
 unsigned frames_per_second = 0;
 
 //Generate Random Numbers
-float generateRandom();
-int nStars = 20;
+int nStars = 2000;
 
-std::vector<GLfloat> stars{-4.2f,-31.9f,4.6f,18.8f,5.9f,-46.8f};
+std::vector<GLfloat> stars{};
 
 
 // the main shader program
@@ -55,11 +54,6 @@ model moon_model{};
 model star_model{};
 model planet_model{};
 
-//typedef struct
-//{
-//    float xPos, yPos ,zPos;
-//    float r , g, b;
-//}stars;
 
 // holds gpu representation of model
 struct model_object {
@@ -97,6 +91,9 @@ GLint location_model_matrix = -1;
 GLint location_view_matrix = -1;
 GLint location_projection_matrix = -1;
 
+GLint location_star_view_matrix = -1;
+GLint location_star_projection_matrix = -1;
+
 // path to the resource folders
 std::string resource_path{};
 
@@ -110,9 +107,11 @@ void update_shader_programs();
 void update_starshaders();
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void initialize_geometry();
+void renderPlanetSystem();
+void renderStars();
 void show_fps();
 void render();
-
+float RandomFloat(float a, float b);
 /////////////////////////////// main function /////////////////////////////////
 int main(int argc, char* argv[]) {
 
@@ -164,15 +163,30 @@ int main(int argc, char* argv[]) {
     resource_path += "/../../resources/";
   }
 
+
+    
   // do before framebuffer_resize call as it requires the projection uniform location
-  update_shader_programs();
+    stars.resize(nStars*4);
+    
+    
+    std::generate(stars.begin(), stars.end() , [&]{return RandomFloat(-100.0f, 100.0f);});
+    //std::generate(stars.begin(), stars.end() , rand() % 100 + 1);
+    for (auto elem : stars) {
+        std::cout << elem << " ";
+    }
+
+    update_shader_programs();
     update_starshaders();
 
-  // initialize projection and view matrices
-  int width, height;
-  glfwGetFramebufferSize(window, &width, &height);
-  update_view(window, width, height);
-  update_camera();
+    // upload view uniforms to new shader
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    update_view(window, width, height);
+    update_camera();
+    
+
+    
+
 
   // set up models
     star_model = model{stars, model::POSITION|model::NORMAL};
@@ -238,6 +252,8 @@ void initialize_geometry() {
 
     
     
+////////initialize Star object////////
+    
     
     // generate vertex array object
     glGenVertexArrays(1, &star_object.vertex_AO);
@@ -268,10 +284,108 @@ void initialize_geometry() {
 // render model
 void render() {
     
-    
-    
-    glBindVertexArray(planet_object.vertex_AO);
+    renderPlanetSystem();
+    renderStars();
 
+    
+
+}
+
+///////////////////////////// update functions ////////////////////////////////
+// update viewport and field of view
+void update_view(GLFWwindow* window, int width, int height) {
+  // resize framebuffer
+  glViewport(0, 0, width, height);
+
+  float aspect = float(width) / float(height);
+  float fov_y = camera_fov;
+  // if width is smaller, extend vertical fov 
+  if(width < height) {
+    fov_y = 2.0f * glm::atan(glm::tan(camera_fov * 0.5f) * (1.0f / aspect));
+  }
+  // projection is hor+ 
+  camera_projection = glm::perspective(fov_y, aspect, 0.1f, 100.0f);
+  // upload matrix to gpu
+  glUseProgram(simple_program);
+  glUniformMatrix4fv(location_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
+  glUseProgram(stars_program);
+  glUniformMatrix4fv(location_star_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
+}
+
+// update camera transformation
+void update_camera() {
+  // vertices are transformed in camera space, so camera transform must be inverted
+  glm::mat4 inv_camera_view = glm::inverse(camera_view);
+  // upload matrix to gpu
+    glUseProgram(simple_program);
+  glUniformMatrix4fv(location_view_matrix, 1, GL_FALSE, glm::value_ptr(inv_camera_view));
+    glUseProgram(stars_program);
+     glUniformMatrix4fv(location_star_view_matrix, 1, GL_FALSE, glm::value_ptr(inv_camera_view));
+    
+}
+
+// load shaders and update uniform locations
+void update_shader_programs() {
+  try {
+    // throws exception when compiling was unsuccessfull
+    GLuint new_program = shader_loader::program(resource_path + "shaders/simple.vert",
+                                                resource_path + "shaders/simple.frag");
+    // free old shader
+    glDeleteProgram(simple_program);
+    // save new shader
+    simple_program = new_program;
+    // bind shader
+    glUseProgram(simple_program);
+    // after shader is recompiled uniform locations may change
+    update_uniform_locations();
+ 
+
+
+  }
+  catch(std::exception&) {
+    // dont crash, allow another try
+  }
+}
+
+void update_starshaders() {
+    try {
+        // throws exception when compiling was unsuccessfull
+        GLuint new_stars_program = shader_loader::program(resource_path + "shaders/stars.vert", resource_path + "shaders/stars.frag");
+        
+        // free old shader
+        glDeleteProgram(stars_program);
+        // save new shader
+        stars_program = new_stars_program;
+        // bind shader
+        glUseProgram(stars_program);
+        update_uniform_star_locations();
+        
+        // upload view uniforms to new shader
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        update_view(window, width, height);
+        update_camera();
+    }
+    catch(std::exception&) {
+        // dont crash, allow another try
+    }
+}
+
+void renderStars(){
+
+    
+
+    glUseProgram(stars_program);
+    glBindVertexArray(star_object.vertex_AO);
+    
+    glDrawArrays(gl::GL_POINTS, 0, star_model.vertex_num);
+}
+
+void renderPlanetSystem(){
+    glUseProgram(simple_program);
+
+    glBindVertexArray(planet_object.vertex_AO);
+    
     
     //sun is rendered
     glm::mat4 model_matrix = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 0.0f});
@@ -280,9 +394,9 @@ void render() {
     
     // extra matrix for normal transformation to keep them orthogonal to surface
     glm::mat4 normal_matrix = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix);
-   glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
+    glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
     
-
+    
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
     
     
@@ -295,11 +409,11 @@ void render() {
     glm::mat4 normal_earth_matrix = glm::inverseTranspose(glm::inverse(camera_view) * earth_matrix);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_earth_matrix));
     
-
+    
     
     // draw bound vertex array as triangles using bound shader
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
-
+    
     
     
     //moon is rendered
@@ -320,120 +434,36 @@ void render() {
     
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
     
-
+    
     
     //planetes except earth are rendered
     for (int i = 0; i < 8; i = i + 1){
         if (i != 3){
-  glm::mat4 model_matrix = glm::rotate(glm::mat4{}, float(glfwGetTime()+i), glm::vec3{0.0f, 1.0f, 0.0f});
-  model_matrix = glm::translate(model_matrix, glm::vec3{4.0f +4*i, 0.0f, -1.0f});
-  glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix));
+            glm::mat4 model_matrix = glm::rotate(glm::mat4{}, float(glfwGetTime()+i), glm::vec3{0.0f, 1.0f, 0.0f});
+            model_matrix = glm::translate(model_matrix, glm::vec3{4.0f +4*i, 0.0f, -1.0f});
+            glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix));
             
-  // extra matrix for normal transformation to keep them orthogonal to surface
-  glm::mat4 normal_matrix = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix);
-  glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
-
-
-  glBindVertexArray(planet_object.vertex_AO);
-  utils::validate_program(simple_program);
+            // extra matrix for normal transformation to keep them orthogonal to surface
+            glm::mat4 normal_matrix = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix);
+            glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
             
-  // draw bound vertex array as triangles using bound shader
-  glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
+            
+            glBindVertexArray(planet_object.vertex_AO);
+            utils::validate_program(simple_program);
+            
+            // draw bound vertex array as triangles using bound shader
+            glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
         }
     }
-    
-    
-    
-    glUseProgram(stars_program);
-    glBindVertexArray(star_object.vertex_AO);
-    glDrawArrays(gl::GL_POINTS, 0, star_model.vertex_num);
 
 }
 
-///////////////////////////// update functions ////////////////////////////////
-// update viewport and field of view
-void update_view(GLFWwindow* window, int width, int height) {
-  // resize framebuffer
-  glViewport(0, 0, width, height);
-
-  float aspect = float(width) / float(height);
-  float fov_y = camera_fov;
-  // if width is smaller, extend vertical fov 
-  if(width < height) {
-    fov_y = 2.0f * glm::atan(glm::tan(camera_fov * 0.5f) * (1.0f / aspect));
-  }
-  // projection is hor+ 
-  camera_projection = glm::perspective(fov_y, aspect, 0.1f, 100000.0f);
-  // upload matrix to gpu
-  glUniformMatrix4fv(location_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
-}
-
-// update camera transformation
-void update_camera() {
-  // vertices are transformed in camera space, so camera transform must be inverted
-  glm::mat4 inv_camera_view = glm::inverse(camera_view);
-  // upload matrix to gpu
-  glUniformMatrix4fv(location_view_matrix, 1, GL_FALSE, glm::value_ptr(inv_camera_view));
-}
-
-// load shaders and update uniform locations
-void update_shader_programs() {
-  try {
-    // throws exception when compiling was unsuccessfull
-    GLuint new_program = shader_loader::program(resource_path + "shaders/simple.vert",
-                                                resource_path + "shaders/simple.frag");
-    // free old shader
-    glDeleteProgram(simple_program);
-    // save new shader
-    simple_program = new_program;
-    // bind shader
-    glUseProgram(simple_program);
-    // after shader is recompiled uniform locations may change
-    update_uniform_locations();
-    update_uniform_star_locations();
- 
-
-    // upload view uniforms to new shader
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    update_view(window, width, height);
-    update_camera();
-  }
-  catch(std::exception&) {
-    // dont crash, allow another try
-  }
-}
-
-void update_starshaders() {
-    try {
-        // throws exception when compiling was unsuccessfull
-        GLuint new_stars_program = shader_loader::program(resource_path + "shaders/stars.vert",
-                                                         resource_path + "shaders/stars.frag");
-        
-        // free old shader
-        glDeleteProgram(stars_program);
-        // save new shader
-        stars_program = new_stars_program;
-        // bind shader
-        glUseProgram(stars_program);
-        update_uniform_star_locations();
-        
-        // upload view uniforms to new shader
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        update_view(window, width, height);
-        update_camera();
-    }
-    catch(std::exception&) {
-        // dont crash, allow another try
-    }
-}
 void update_uniform_star_locations() {
 //    location_normal_matrix = glGetUniformLocation(stars_program, "NormalMatrix");
 //    location_model_matrix = glGetUniformLocation(stars_program, "ModelMatrix");
-    
-//    location_view_matrix = glGetUniformLocation(stars_program, "ViewMatrix");
-//    location_projection_matrix = glGetUniformLocation(stars_program, "ProjectionMatrix");
+//    
+    location_star_view_matrix = glGetUniformLocation(stars_program, "ViewMatrix");
+    location_star_projection_matrix = glGetUniformLocation(stars_program, "ProjectionMatrix");
 }
 
 // update shader uniform locations
@@ -455,7 +485,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     glfwSetWindowShouldClose(window, 1);
   }
   else if(key == GLFW_KEY_R && action == GLFW_PRESS) {
-    update_shader_programs();
+      // upload view uniforms to new shader
+      update_shader_programs();
+
+      int width, height;
+      glfwGetFramebufferSize(window, &width, &height);
+      update_view(window, width, height);
+      update_camera();
+      
   }
   else if(key == GLFW_KEY_W && action == GLFW_PRESS) {
     camera_view = glm::translate(camera_view, glm::vec3{0.0f, 0.0f, -10.0f});
@@ -525,14 +562,11 @@ void quit(int status) {
 
 
 
-void generateRandom(GLfloat arr[])
-{
-    
-    
-    for (int i = 1; i < nStars*3; i++)
-    {
-        arr[i] = 1+ rand() % 10;
-    }
+float RandomFloat(float a, float b) {
+    float random = ((float) rand()) / (float) RAND_MAX;
+    float diff = b - a;
+    float r = random * diff;
+    return a + r;
+//    return random;
     
 }
-

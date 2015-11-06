@@ -1,6 +1,6 @@
 #version 150
 
-in  vec4 pass_Normal;
+//in  vec4 pass_Normal;
 out vec4 out_Color;
 
 void main(void)
