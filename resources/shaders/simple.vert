@@ -10,9 +10,11 @@ uniform mat4 ViewMatrix;
 uniform mat4 ProjectionMatrix;
 uniform mat4 NormalMatrix;
 
+
 out vec4 pass_Normal;
 
-void main(void)
+//takes no void anymore
+void main()
 {
 	gl_Position = (ProjectionMatrix  * ViewMatrix * ModelMatrix) * vec4(in_Position, 1.0f);
 	pass_Normal = normalize(NormalMatrix * vec4(in_Normal, 0.0f));

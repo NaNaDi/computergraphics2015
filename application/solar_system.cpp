@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
     std::generate(stars.begin(), stars.end() , [&]{return RandomFloat(-100.0f, 100.0f);});
     //std::generate(stars.begin(), stars.end() , rand() % 100 + 1);
     for (auto elem : stars) {
-        std::cout << elem << " ";
+//        std::cout << elem << " ";
     }
 
     update_shader_programs();
@@ -276,8 +276,7 @@ void initialize_geometry() {
     // second attribute is 3 floats with no offset & stride
     glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, star_model.vertex_bytes, star_model.offsets[model::NORMAL]);
     
-
-
+  
 }
 
 /////////////////////////////////////////////////////// render functions /////////////////////////////////////////////////////////////
@@ -304,9 +303,14 @@ void update_view(GLFWwindow* window, int width, int height) {
     fov_y = 2.0f * glm::atan(glm::tan(camera_fov * 0.5f) * (1.0f / aspect));
   }
   // projection is hor+ 
-  camera_projection = glm::perspective(fov_y, aspect, 0.1f, 100.0f);
+  camera_projection = glm::perspective(fov_y, aspect, 0.1f, 1000.0f);
   // upload matrix to gpu
   glUseProgram(simple_program);
+    
+    //Do we need to use "out_Color"?
+//    int loc2 = glGetUniformLocation(simple_program, "out_Color");
+    
+    
   glUniformMatrix4fv(location_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
   glUseProgram(stars_program);
   glUniformMatrix4fv(location_star_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
@@ -328,8 +332,13 @@ void update_camera() {
 void update_shader_programs() {
   try {
     // throws exception when compiling was unsuccessfull
-    GLuint new_program = shader_loader::program(resource_path + "shaders/simple.vert",
-                                                resource_path + "shaders/simple.frag");
+    GLuint new_program = shader_loader::program(resource_path + "shaders/simpleBlinn.vert",
+                                                resource_path + "shaders/simpleBlinn.frag");
+//      GLuint new_program = [self compileShader:@ "shaders/simpleBlinn.vert" withType:GL_VERTEX_SHADER];
+//      GLuint new_program = [self compileShader:@ "shaders/simpleBlinn.frag" withType:GL_FRAGMENT_SHADER];
+      
+                                                  
+      
     // free old shader
     glDeleteProgram(simple_program);
     // save new shader
@@ -349,6 +358,7 @@ void update_shader_programs() {
 
 void update_starshaders() {
     try {
+        
         // throws exception when compiling was unsuccessfull
         GLuint new_stars_program = shader_loader::program(resource_path + "shaders/stars.vert", resource_path + "shaders/stars.frag");
         
