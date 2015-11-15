@@ -7,8 +7,6 @@ in vec3 vertPos;
 
 out vec4 FragColor;
 
-//uniform int mode;
-
 const vec3 lightPos = vec3(0.0,0.0,0.0);
 const vec3 ambientColor = vec3(0.1, 0.1, 0.2);
 const vec3 diffuseColor = vec3(0.5, 0.0, 0.5);
@@ -26,7 +24,6 @@ void main() {
         
         vec3 viewDir = normalize(-vertPos);
         
-        // this is blinn phong
         vec3 halfDir = normalize(lightDir + viewDir);
         float specAngle = max(dot(halfDir, normal), 0.0);
         specular = pow(specAngle, 16.0);
