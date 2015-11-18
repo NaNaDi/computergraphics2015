@@ -326,6 +326,7 @@ void update_camera() {
   // upload matrix to gpu
     glUseProgram(simple_program);
   glUniformMatrix4fv(location_view_matrix, 1, GL_FALSE, glm::value_ptr(inv_camera_view));
+    glUniform3fv(location_light, 1, glm::value_ptr(glm::mat4(0.0f)));
     glUseProgram(stars_program);
      glUniformMatrix4fv(location_star_view_matrix, 1, GL_FALSE, glm::value_ptr(inv_camera_view));
     
@@ -339,8 +340,6 @@ void update_shader_programs() {
                                                 resource_path + "shaders/simpleBlinn.frag");
 //      GLuint new_program = [self compileShader:@ "shaders/simpleBlinn.vert" withType:GL_VERTEX_SHADER];
 //      GLuint new_program = [self compileShader:@ "shaders/simpleBlinn.frag" withType:GL_FRAGMENT_SHADER];
-      
-                                                  
       
     // free old shader
     glDeleteProgram(simple_program);
@@ -418,8 +417,7 @@ void renderPlanetSystem(){
     //TODO: use different lightning for sun
     //TODO: fix cameraPosition to not influence lightning
     glm::vec4 sun_position = (camera_projection * camera_view * model_matrix) * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f};
-    glm::vec3 sunPos = glm::vec3(sun_position);
-    glUniform3fv(location_light, 1, glm::value_ptr(sunPos));
+    glUniform3fv(location_light, 1, glm::value_ptr(sun_position));
     
 
     
