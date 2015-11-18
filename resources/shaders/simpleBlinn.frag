@@ -6,13 +6,16 @@ precision mediump float;
 in vec3 normalInterp;
 in vec3 vertPos;
 
-//uniform vec3 planetColor;
+
 out vec4 FragColor;
 
-const vec3 lightPos = vec3(1.0,1.0,1.0);
+//const vec3 lightPos = vec3(1.0,1.0,1.0);
 const vec3 ambientColor = vec3(0.1, 0.1, 0.2);
-const vec3 diffuseColor = vec3(0.5, 0.0, 0.5);
+//const vec3 diffuseColor = vec3(0.5, 0.0, 0.5);
 const vec3 specColor = vec3(1.0, 1.0, 1.0);
+
+uniform vec3 shaderColor;
+uniform vec3 lightPos;
 
 void main() {
     
@@ -31,8 +34,10 @@ void main() {
         specular = pow(specAngle, 16.0);
     }
     
+    
+    //exchanged shaderColor and diffuseColor
     FragColor = vec4(ambientColor +
-                        lambertian * diffuseColor +
+                        lambertian * shaderColor +
                         specular * specColor, 1.0);
-    //     FragColor = vec4(ambientColor +lambertian * diffuseColor + specular * specColor) * planetColor;
+    
 }

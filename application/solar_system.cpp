@@ -94,6 +94,9 @@ GLint location_projection_matrix = -1;
 GLint location_star_view_matrix = -1;
 GLint location_star_projection_matrix = -1;
 
+GLint location_color = -1;
+GLint location_light = -1;
+
 // path to the resource folders
 std::string resource_path{};
 
@@ -406,6 +409,19 @@ void renderPlanetSystem(){
     glm::mat4 normal_matrix = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
     
+    //send colorInformation of Sun to Shader
+    glm::vec3 sunColor = glm::vec3{ 1.0f,0.8f ,0.6f};
+    glUniform3fv(location_color, 1, glm::value_ptr(sunColor));
+    
+    
+    //send position Information of Sun to Shader
+    //TODO: use different lightning for sun
+    //TODO: fix cameraPosition to not influence lightning
+    glm::vec4 sun_position = (camera_projection * camera_view * model_matrix) * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f};
+    glm::vec3 sunPos = glm::vec3(sun_position);
+    glUniform3fv(location_light, 1, glm::value_ptr(sunPos));
+    
+
     
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
     
@@ -419,7 +435,8 @@ void renderPlanetSystem(){
     glm::mat4 normal_earth_matrix = glm::inverseTranspose(glm::inverse(camera_view) * earth_matrix);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_earth_matrix));
     
-    
+    glm::vec3 eartColor = glm::vec3{ 0.6f,0.7f ,1.0f  };
+    glUniform3fv(location_color, 1, glm::value_ptr(eartColor));
     
     // draw bound vertex array as triangles using bound shader
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
@@ -442,6 +459,10 @@ void renderPlanetSystem(){
     glm::mat4 normal_matrix2 = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix2);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix2));
     
+    
+    glm::vec3 moonColor = glm::vec3{ 0.9f, 0.9f, 0.8f };
+    glUniform3fv(location_color, 1, glm::value_ptr(moonColor));
+    
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
     
     
@@ -457,9 +478,55 @@ void renderPlanetSystem(){
             glm::mat4 normal_matrix = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix);
             glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
             
+            float rColor = 0.0f;
+            float gColor = 0.0f;
+            float bColor = 0.0f;
+            switch (i) {
+                case 1:
+                    rColor = 0.9f;
+                     gColor = 0.9f;
+                     bColor = 0.5f;
+                    break;
+                case 2:
+                  rColor = 0.7f;
+                     gColor = 0.8f;
+                     bColor = 0.5f;
+                    break;
+                case 4:
+                   rColor = 0.7f;
+                     gColor = 0.8f;
+                     bColor = 0.6f;
+                    break;
+                case 5:
+                   rColor = 0.6f;
+                     gColor = 0.5f;
+                     bColor = 0.6f;
+                    break;
+                case 6:
+                     rColor = 0.5f;
+                    gColor = 0.2f;
+                    bColor = 0.4f;
+                    break;
+                case 7:
+                     rColor = 0.4f;
+                    gColor = 0.4f;
+                    bColor = 0.2f;
+                    break;
+                case 8:
+                     rColor = 0.3f;
+                    gColor = 0.5f;
+                    bColor = 0.5f;
+                    break;
+                default:
+                   rColor = 0.5f;
+            }
+            
+            glm::vec3 planetColor = glm::vec3{ rColor,gColor ,bColor   };
+            glUniform3fv(location_color, 1, glm::value_ptr(planetColor));
             
             glBindVertexArray(planet_object.vertex_AO);
             utils::validate_program(simple_program);
+            
             
             // draw bound vertex array as triangles using bound shader
             glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
@@ -482,6 +549,9 @@ void update_uniform_locations() {
   location_model_matrix = glGetUniformLocation(simple_program, "ModelMatrix");
   location_view_matrix = glGetUniformLocation(simple_program, "ViewMatrix");
   location_projection_matrix = glGetUniformLocation(simple_program, "ProjectionMatrix");
+    
+  location_color = glGetUniformLocation(simple_program, "shaderColor");
+  location_light = glGetUniformLocation(simple_program, "lightPos");
 }
 
 ///////////////////////////// misc functions ////////////////////////////////
