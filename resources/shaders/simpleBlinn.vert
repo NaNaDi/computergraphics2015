@@ -17,7 +17,7 @@ out vec3 vertPos;
 void main(){
     
     gl_Position = (ProjectionMatrix * ViewMatrix * ModelMatrix) * vec4(inputPosition, 1.0);
-    vec4 vertPos4 = ModelMatrix * ViewMatrix * vec4(inputPosition, 1.0);
+    vec4 vertPos4 = ViewMatrix * ModelMatrix * vec4(inputPosition, 1.0);
     vertPos = vec3(vertPos4) / vertPos4.w;
     normalInterp = vec3(NormalMatrix * vec4(inputNormal, 0.0));
     
