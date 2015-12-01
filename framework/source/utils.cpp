@@ -121,7 +121,8 @@ void watch_gl_errors(bool activate) {
           }
           // error
           std::cerr  << " - " << Meta::getString(error) << std::endl;
-
+          // throw exception to allow for backtrace
+          throw std::runtime_error("Execution of " + std::string(call.function->name()));
           exit(EXIT_FAILURE);
         }
       }

@@ -5,7 +5,7 @@
 #define STBI_ONLY_PNG
 #define STBI_ONLY_TGA
 #define STBI_NO_LINEAR
-// get extensiv error on failure
+// get extensive error on failure
 #define STBI_FAILURE_USERMSG
 // create implementation here
 #define STB_IMAGE_IMPLEMENTATION
