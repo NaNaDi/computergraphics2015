@@ -90,7 +90,7 @@ texture texture9;
 texture texture10;
 
 // camera matrices
-glm::mat4 camera_view = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 40.0f});
+glm::mat4 camera_transform = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 40.0f});
 glm::mat4 camera_projection{1.0f};
 
 // uniform locations
@@ -110,8 +110,8 @@ std::string resource_path{};
 
 /////////////////////////// forward declarations //////////////////////////////
 void quit(int status);
-void update_view(GLFWwindow* window, int width, int height);
-void update_camera();
+void update_projection(GLFWwindow* window, int width, int height);
+void update_view();
 void update_uniform_locations();
 void update_uniform_star_locations();
 void update_shader_programs(bool throwing = false);
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     // allow free mouse movement
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     // register resizing function
-    glfwSetFramebufferSizeCallback(window, update_view);
+    glfwSetFramebufferSizeCallback(window, update_projection);
     
     
     // initialize glindings in this context
@@ -194,8 +194,8 @@ int main(int argc, char* argv[]) {
     // upload view uniforms to new shader
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-    update_view(window, width, height);
-    update_camera();
+    update_projection(window, width, height);
+    update_view();
     
     
     
@@ -326,7 +326,7 @@ void render() {
 
 ///////////////////////////// update functions ////////////////////////////////
 // update viewport and field of view
-void update_view(GLFWwindow* window, int width, int height) {
+void update_projection(GLFWwindow* window, int width, int height) {
     // resize framebuffer
     glViewport(0, 0, width, height);
     
@@ -338,6 +338,7 @@ void update_view(GLFWwindow* window, int width, int height) {
     }
     // projection is hor+
     camera_projection = glm::perspective(fov_y, aspect, 0.1f, 1000.0f);
+    glm::mat4 inv_camera_view = glm::inverse(camera_transform);
     // upload matrix to gpu
     glUseProgram(simple_program);
     
@@ -351,9 +352,9 @@ void update_view(GLFWwindow* window, int width, int height) {
 }
 
 // update camera transformation
-void update_camera() {
+void update_view() {
     // vertices are transformed in camera space, so camera transform must be inverted
-    glm::mat4 inv_camera_view = glm::inverse(camera_view);
+    glm::mat4 inv_camera_view = glm::inverse(camera_transform);
     // upload matrix to gpu
     glUseProgram(simple_program);
     glUniformMatrix4fv(location_view_matrix, 1, GL_FALSE, glm::value_ptr(inv_camera_view));
@@ -363,6 +364,7 @@ void update_camera() {
     
     
 }
+
 
 // load shaders and update uniform locations
 void update_shader_programs(bool throwing) {
@@ -431,8 +433,8 @@ void update_starshaders() {
         // upload view uniforms to new shader
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
-        update_view(window, width, height);
-        update_camera();
+        update_projection(window, width, height);
+        update_view();
     }
     catch(std::exception&) {
         // dont crash, allow another try
@@ -461,7 +463,7 @@ void renderPlanetSystem(){
     glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix));
     
     // extra matrix for normal transformation to keep them orthogonal to surface
-    glm::mat4 normal_matrix = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix);
+    glm::mat4 normal_matrix = glm::inverseTranspose(glm::inverse(camera_transform) * model_matrix);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
     
     //send colorInformation of Sun to Shader
@@ -472,7 +474,7 @@ void renderPlanetSystem(){
     //send position Information of Sun to Shader
     //TODO: use different lightning for sun
     //TODO: fix cameraPosition to not influence lightning
-    glm::vec4 sun_position = (camera_projection * camera_view * model_matrix) * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f};
+    glm::vec4 sun_position = (camera_projection * camera_transform * model_matrix) * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f};
     glUniform3fv(location_light, 1, glm::value_ptr(sun_position));
     
     
@@ -486,7 +488,7 @@ void renderPlanetSystem(){
     glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(earth_matrix));
     
     // extra matrix for normal transformation to keep them orthogonal to surface
-    glm::mat4 normal_earth_matrix = glm::inverseTranspose(glm::inverse(camera_view) * earth_matrix);
+    glm::mat4 normal_earth_matrix = glm::inverseTranspose(glm::inverse(camera_transform) * earth_matrix);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_earth_matrix));
     
     glm::vec3 eartColor = glm::vec3{ 0.6f,0.7f ,1.0f  };
@@ -513,7 +515,7 @@ void renderPlanetSystem(){
     glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix2));
     
     // extra matrix for normal transformation to keep them orthogonal to surface
-    glm::mat4 normal_matrix2 = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix2);
+    glm::mat4 normal_matrix2 = glm::inverseTranspose(glm::inverse(camera_transform) * model_matrix2);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix2));
     
     
@@ -527,12 +529,26 @@ void renderPlanetSystem(){
     //planetes except earth are rendered
     for (int i = 0; i < 8; i = i + 1){
         if (i != 3){
+            
+            
+            
+            
+            //render texture
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture_object);
+            glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
+            
+            
+            glBindVertexArray(planet_object.vertex_AO);
+            utils::validate_program(simple_program);
+            
+            
             glm::mat4 model_matrix = glm::rotate(glm::mat4{}, float(glfwGetTime()+i), glm::vec3{0.0f, 1.0f, 0.0f});
             model_matrix = glm::translate(model_matrix, glm::vec3{4.0f +4*i, 0.0f, -1.0f});
             glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(model_matrix));
             
             // extra matrix for normal transformation to keep them orthogonal to surface
-            glm::mat4 normal_matrix = glm::inverseTranspose(glm::inverse(camera_view) * model_matrix);
+            glm::mat4 normal_matrix = glm::inverseTranspose(glm::inverse(camera_transform) * model_matrix);
             glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
             
             float rColor = 0.0f;
@@ -581,16 +597,7 @@ void renderPlanetSystem(){
             glm::vec3 planetColor = glm::vec3{ rColor,gColor ,bColor   };
             glUniform3fv(location_color, 1, glm::value_ptr(planetColor));
             
-            
-            //render texture
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture_object);
-            glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
-            
-            
-            glBindVertexArray(planet_object.vertex_AO);
-            utils::validate_program(simple_program);
-            
+     
             
             
             
@@ -636,41 +643,41 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
-        update_view(window, width, height);
-        update_camera();
+        update_projection(window, width, height);
+        update_view();
         
     }
     else if(key == GLFW_KEY_W && action == GLFW_PRESS) {
-        camera_view = glm::translate(camera_view, glm::vec3{0.0f, 0.0f, -10.0f});
-        update_camera();
+        camera_transform = glm::translate(camera_transform, glm::vec3{0.0f, 0.0f, -10.0f});
+        update_view();
     }
     else if(key == GLFW_KEY_S && action == GLFW_PRESS) {
-        camera_view = glm::translate(camera_view, glm::vec3{0.0f, 0.0f, 10.0f});
-        update_camera();
+        camera_transform = glm::translate(camera_transform, glm::vec3{0.0f, 0.0f, 10.0f});
+        update_view();
     }
     else if(key == GLFW_KEY_Q && action == GLFW_PRESS){
-        camera_view = glm::translate(camera_view, glm::vec3{0.0f, 2.0f, 0.0f});
-        update_camera();
+        camera_transform = glm::translate(camera_transform, glm::vec3{0.0f, 2.0f, 0.0f});
+        update_view();
     }
     else if(key == GLFW_KEY_E && action == GLFW_PRESS){
-        camera_view = glm::translate(camera_view, glm::vec3{0.0f, -2.0f, 0.0f});
-        update_camera();
+        camera_transform = glm::translate(camera_transform, glm::vec3{0.0f, -2.0f, 0.0f});
+        update_view();
     }
     else if(key == GLFW_KEY_A && action == GLFW_PRESS){
-        camera_view = glm::translate(camera_view, glm::vec3{-2.0f, 0.0f, 0.0f});
-        update_camera();
+        camera_transform = glm::translate(camera_transform, glm::vec3{-2.0f, 0.0f, 0.0f});
+        update_view();
     }
     else if(key == GLFW_KEY_D && action == GLFW_PRESS){
-        camera_view = glm::translate(camera_view, glm::vec3{2.0f, 0.0f, 0.0f});
-        update_camera();
+        camera_transform = glm::translate(camera_transform, glm::vec3{2.0f, 0.0f, 0.0f});
+        update_view();
     }
     else if (key == GLFW_KEY_DOWN && action == GLFW_PRESS){
-        camera_view = glm::rotate(camera_view, float(0.1), glm::vec3{1.0f, 0.0f, 0.0f});
-        update_camera();
+        camera_transform = glm::rotate(camera_transform, float(0.1), glm::vec3{1.0f, 0.0f, 0.0f});
+        update_view();
     }
     else if (key == GLFW_KEY_UP && action == GLFW_PRESS){
-        camera_view = glm::rotate(camera_view, float(-0.1), glm::vec3{1.0f, 0.0f, 0.0f});
-        update_camera();
+        camera_transform = glm::rotate(camera_transform, float(-0.1), glm::vec3{1.0f, 0.0f, 0.0f});
+        update_view();
     }
 }
 
