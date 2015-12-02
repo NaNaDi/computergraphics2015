@@ -4,9 +4,8 @@
 
 layout(location=0) in vec3 inputPosition;
 layout(location=1)in vec3 inputNormal;
+layout(location=2) in vec2 in_textureCoord;
 
-
-layout (location=2) in vec2 in_textureCoord;
 uniform mat4 ModelMatrix;
 uniform mat4 ViewMatrix;
 uniform mat4 ProjectionMatrix;

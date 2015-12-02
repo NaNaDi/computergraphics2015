@@ -32,8 +32,8 @@ using namespace gl;
 // vertical field of view of camera
 const float camera_fov = glm::radians(60.0f);
 // initial window dimensions
-const unsigned window_width = 640;
-const unsigned window_height = 480;
+const unsigned window_width = 800;
+const unsigned window_height = 800;
 // the rendering window
 GLFWwindow* window;
 
@@ -76,18 +76,18 @@ model_object planets[8] = {planet_object,planet_object2,planet_object3,planet_ob
 
 //texture struct to store textures
 
-GLuint texture_object = 0;
-
+GLuint texture_object0, texture_object1, texture_object2, texture_object3, texture_object3_1, texture_object4, texture_object5, texture_object6, texture_object7, texture_object8, texture_objectU;
+texture texture0;
 texture texture1;
 texture texture2;
 texture texture3;
+texture texture3_1;
 texture texture4;
 texture texture5;
 texture texture6;
 texture texture7;
 texture texture8;
-texture texture9;
-texture texture10;
+texture textureU;
 
 // camera matrices
 glm::mat4 camera_transform = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 40.0f});
@@ -123,6 +123,7 @@ void renderStars();
 void show_fps();
 void render();
 void loadTextures();
+void initializeTextures();
 
 float RandomFloat(float a, float b);
 /////////////////////////////// main function /////////////////////////////////
@@ -232,7 +233,7 @@ int main(int argc, char* argv[]) {
 void initialize_geometry() {
     
     
-    planet_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL);
+    planet_model = model_loader::obj(resource_path + "models/sphere.obj", model::NORMAL | model::TEXCOORD);
     
     
     // generate vertex array object
@@ -251,11 +252,15 @@ void initialize_geometry() {
     glEnableVertexAttribArray(0);
     // first attribute is 3 floats with no offset & stride
     glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::POSITION]);
+   
     // activate second attribute on gpu
     glEnableVertexAttribArray(1);
     // second attribute is 3 floats with no offset & stride
     glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::NORMAL]);
     
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, model::TEXCOORD.components, model::TEXCOORD.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::TEXCOORD]);
+
     // generate generic buffer
     glGenBuffers(1, &planet_object.element_BO);
     // bind this as an vertex array buffer containing all attributes
@@ -293,22 +298,10 @@ void initialize_geometry() {
     
     
     //initialize the texture
+    initializeTextures();
     
+
     
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object);
-    glBindTexture(texture1.target, texture_object);
-    
-    
-    glTexParameteri(texture1.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture1.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    
-    
-    //texture1.target == GL_TEXTURE_2D
-    glTexImage2D(texture1.target , 0 , GLint(GL_RGB) , texture1.width , texture1.height , 0 , GL_RGB , texture1.channel_type , texture1.data.data());
-    
-    
-    //     std::cout << texture1.target << " " << GLint(GL_RGB) << " " << texture1.width << " " << texture1.height << " " << GL_RGB << " " << texture1.channel_type << " " << texture1.data.data() << " ";
     
 }
 
@@ -404,16 +397,107 @@ void update_shader_programs(bool throwing) {
     }}
 
 void loadTextures() {
-    texture1 = texture_loader::file(resource_path + "textures/1.jpg");
-    texture2 = texture_loader::file(resource_path + "textures/2.jpg");
-    texture3 = texture_loader::file(resource_path + "textures/3.jpg");
-    texture4 = texture_loader::file(resource_path + "textures/4.jpg");
-    texture5 = texture_loader::file(resource_path + "textures/5.jpg");
-    texture6 = texture_loader::file(resource_path + "textures/6.jpg");
-    texture7 = texture_loader::file(resource_path + "textures/7.jpg");
-    texture8 = texture_loader::file(resource_path + "textures/8.jpg");
     
+    texture1 = texture_loader::file(resource_path + "textures/1.png");
+    texture2 = texture_loader::file(resource_path + "textures/2.png");
+    texture3 = texture_loader::file(resource_path + "textures/3.png");
+    texture4 = texture_loader::file(resource_path + "textures/4.png");
+    texture5 = texture_loader::file(resource_path + "textures/5.png");
+    texture6 = texture_loader::file(resource_path + "textures/6.png");
+    texture7 = texture_loader::file(resource_path + "textures/7.png");
+    texture8 = texture_loader::file(resource_path + "textures/8.png");
+    texture0 = texture_loader::file(resource_path + "textures/0.png");
+    texture3_1 = texture_loader::file(resource_path + "textures/3-1.png");
+    textureU = texture_loader::file(resource_path + "textures/9.png");
+
     
+}
+
+void initializeTextures(){
+    //USE GL_RGBA if the textures provide an alpha channel
+    //somehow not needed yet:    //
+
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_object0);
+    glBindTexture(texture0.target, texture_object0);
+    glTexParameteri(texture0.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(texture0.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(texture0.target , 0 , GLint(GL_RGBA) , texture0.width , texture0.height , 0 , GL_RGBA , texture0.channel_type , texture0.data.data());
+    
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_object1);
+    glBindTexture(texture1.target, texture_object1);
+    glTexParameteri(texture1.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(texture1.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(texture1.target , 0 , GLint(GL_RGBA) , texture1.width , texture1.height , 0 , GL_RGBA , texture1.channel_type , texture1.data.data());
+    
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_object2);
+    glBindTexture(texture2.target, texture_object2);
+    glTexParameteri(texture2.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(texture2.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(texture2.target , 0 , GLint(GL_RGBA) , texture2.width , texture2.height , 0 , GL_RGBA , texture2.channel_type , texture2.data.data());
+   
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_object3);
+    glBindTexture(texture3.target, texture_object3);
+    glTexParameteri(texture3.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(texture3.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(texture3.target , 0 , GLint(GL_RGBA) , texture3.width , texture3.height , 0 , GL_RGBA , texture3.channel_type , texture3.data.data());
+    
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_object4);
+    glBindTexture(texture4.target, texture_object4);
+    glTexParameteri(texture4.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(texture4.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(texture4.target , 0 , GLint(GL_RGBA) , texture4.width , texture4.height , 0 , GL_RGBA , texture4.channel_type , texture4.data.data());
+    
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_object5);
+    glBindTexture(texture5.target, texture_object5);
+    glTexParameteri(texture5.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(texture5.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(texture5.target , 0 , GLint(GL_RGBA) , texture5.width , texture5.height , 0 , GL_RGBA , texture5.channel_type , texture5.data.data());
+    
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_object6);
+    glBindTexture(texture6.target, texture_object6);
+    glTexParameteri(texture6.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(texture6.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(texture6.target , 0 , GLint(GL_RGBA) , texture6.width , texture6.height , 0 , GL_RGBA , texture6.channel_type , texture6.data.data());
+    
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_object7);
+    glBindTexture(texture7.target, texture_object7);
+    glTexParameteri(texture7.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(texture7.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(texture7.target , 0 , GLint(GL_RGBA) , texture7.width , texture7.height , 0 , GL_RGBA , texture7.channel_type , texture7.data.data());
+    
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_object8);
+    glBindTexture(texture8.target, texture_object8);
+    glTexParameteri(texture8.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(texture8.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(texture8.target , 0 , GLint(GL_RGBA) , texture8.width , texture8.height , 0 , GL_RGBA , texture8.channel_type , texture8.data.data());
+    
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_objectU);
+    glBindTexture(textureU.target, texture_objectU);
+    glTexParameteri(textureU.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(textureU.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(textureU.target , 0 , GLint(GL_RGBA) , textureU.width , textureU.height , 0 , GL_RGBA , textureU.channel_type , textureU.data.data());
+    
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &texture_object3_1);
+    glBindTexture(texture3_1.target, texture_object3_1);
+    glTexParameteri(texture3_1.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(texture3_1.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(texture3_1.target , 0 , GLint(GL_RGBA) , texture3_1.width , texture3_1.height , 0 , GL_RGBA , texture3_1.channel_type , texture3_1.data.data());
+  
+   
+
+
+
 }
 
 void update_starshaders() {
@@ -457,6 +541,27 @@ void renderPlanetSystem(){
     glBindVertexArray(planet_object.vertex_AO);
     
     
+    //skybox is rendered
+    glm::mat4 sky_matrix = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 0.0f});
+    sky_matrix = glm::scale(sky_matrix, glm::vec3{150.0f, 150.0f, 150.0f});
+    glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(sky_matrix));
+    
+    // extra matrix for normal transformation to keep them orthogonal to surface
+    glm::mat4 normal_sky_matrix = glm::inverseTranspose(glm::inverse(camera_transform) * sky_matrix);
+    glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_sky_matrix));
+    
+    
+//    //send position Information of Sun to Shader
+//    glm::vec4 sun_position = ( glm::inverse(camera_transform) * model_matrix) * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f};
+//    glUniform3fv(location_light, 1, glm::value_ptr(sun_position));
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(textureU.target, texture_objectU);
+    glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
+    
+    glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
+    
+    
     //sun is rendered
     glm::mat4 model_matrix = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 0.0f});
     model_matrix = glm::scale(model_matrix, glm::vec3{2.0f, 2.0f, 2.0f});
@@ -473,11 +578,12 @@ void renderPlanetSystem(){
     
     //send position Information of Sun to Shader
     //TODO: use different lightning for sun
-    //TODO: fix cameraPosition to not influence lightning
-    glm::vec4 sun_position = (camera_projection * camera_transform * model_matrix) * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f};
+    glm::vec4 sun_position = ( glm::inverse(camera_transform) * model_matrix) * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f};
     glUniform3fv(location_light, 1, glm::value_ptr(sun_position));
     
-    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(texture0.target, texture_object0);
+    glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
     
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
     
@@ -494,6 +600,10 @@ void renderPlanetSystem(){
     glm::vec3 eartColor = glm::vec3{ 0.6f,0.7f ,1.0f  };
     glUniform3fv(location_color, 1, glm::value_ptr(eartColor));
     
+    //textures
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(texture3.target, texture_object3);
+    glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
     
     // draw bound vertex array as triangles using bound shader
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
@@ -521,27 +631,20 @@ void renderPlanetSystem(){
     
     glm::vec3 moonColor = glm::vec3{ 0.9f, 0.9f, 0.8f };
     glUniform3fv(location_color, 1, glm::value_ptr(moonColor));
-    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(texture3_1.target, texture_object3_1);
+    glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
     
     
     
     //planetes except earth are rendered
-    for (int i = 0; i < 8; i = i + 1){
+    for (int i = 1; i < 8; i = i + 1){
         if (i != 3){
             
             
             
-            
-            //render texture
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture_object);
-            glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
-            
-            
-            glBindVertexArray(planet_object.vertex_AO);
-            utils::validate_program(simple_program);
-            
+
             
             glm::mat4 model_matrix = glm::rotate(glm::mat4{}, float(glfwGetTime()+i), glm::vec3{0.0f, 1.0f, 0.0f});
             model_matrix = glm::translate(model_matrix, glm::vec3{4.0f +4*i, 0.0f, -1.0f});
@@ -555,40 +658,58 @@ void renderPlanetSystem(){
             float gColor = 0.0f;
             float bColor = 0.0f;
             switch (i) {
+        
                 case 1:
                     rColor = 0.9f;
                     gColor = 0.9f;
                     bColor = 0.5f;
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(texture1.target, texture_object1);
                     break;
                 case 2:
                     rColor = 0.7f;
                     gColor = 0.8f;
                     bColor = 0.5f;
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(texture2.target, texture_object2);
                     break;
+                    
+                    // no case 3 because that's how we did it
+                    
                 case 4:
                     rColor = 0.7f;
                     gColor = 0.8f;
                     bColor = 0.6f;
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(texture4.target, texture_object4);
                     break;
                 case 5:
                     rColor = 0.6f;
                     gColor = 0.5f;
                     bColor = 0.6f;
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(texture5.target, texture_object5);
                     break;
                 case 6:
                     rColor = 0.5f;
                     gColor = 0.2f;
                     bColor = 0.4f;
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(texture6.target, texture_object6);
                     break;
                 case 7:
                     rColor = 0.4f;
                     gColor = 0.4f;
                     bColor = 0.2f;
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(texture7.target, texture_object7);
                     break;
                 case 8:
                     rColor = 0.3f;
                     gColor = 0.5f;
                     bColor = 0.5f;
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(texture8.target, texture_object8);
                     break;
                 default:
                     rColor = 0.5f;
@@ -597,8 +718,15 @@ void renderPlanetSystem(){
             glm::vec3 planetColor = glm::vec3{ rColor,gColor ,bColor   };
             glUniform3fv(location_color, 1, glm::value_ptr(planetColor));
             
+            glUseProgram(simple_program);
      
+            //render texture
+            glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
             
+            
+            glBindVertexArray(planet_object.vertex_AO);
+            utils::validate_program(simple_program);
+
             
             
             // draw bound vertex array as triangles using bound shader
