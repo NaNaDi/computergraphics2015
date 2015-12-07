@@ -21,6 +21,7 @@
 #include "model_loader.hpp"
 #include "texture_loader.hpp"
 #include "utils.hpp"
+#include <algorithm>
 
 #include <cstdlib>
 #include <iostream>
