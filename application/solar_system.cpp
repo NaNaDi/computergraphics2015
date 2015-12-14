@@ -51,6 +51,7 @@ std::vector<GLfloat> stars{};
 // the main shader program
 GLuint simple_program = 0;
 GLuint stars_program = 0;
+GLuint screen_program = 0;
 // cpu representation of model
 model sun_model{};
 model moon_model{};
@@ -68,7 +69,7 @@ struct model_object {
 
 
 // creating planets
-model_object sun_object, moon_object, star_object, planet_object, planet_object2, planet_object3, planet_object4,planet_object5,planet_object6,planet_object7,planet_object8 ;
+model_object sun_object, moon_object, star_object, planet_object, planet_object2, planet_object3, planet_object4,planet_object5,planet_object6,planet_object7,planet_object8, screen_quad;
 
 
 //putting planet_objects in array
@@ -77,7 +78,7 @@ model_object planets[8] = {planet_object,planet_object2,planet_object3,planet_ob
 
 //texture struct to store textures
 
-GLuint texture_object0, texture_object1, texture_object2, texture_object3, texture_object3_1, texture_object4, texture_object5, texture_object6, texture_object7, texture_object8, texture_objectU;
+GLuint texture_object0, texture_object1, texture_object2, texture_object3, texture_object3_1, texture_object4, texture_object5, texture_object6, texture_object7, texture_object8, texture_objectU, buffer_texture_object;
 texture texture0;
 texture texture1;
 texture texture2;
@@ -106,6 +107,9 @@ GLint location_star_projection_matrix = -1;
 GLint location_color = -1;
 GLint location_light = -1;
 
+GLuint rb_handle;
+GLuint fbo_handle;
+
 // path to the resource folders
 std::string resource_path{};
 
@@ -125,6 +129,7 @@ void show_fps();
 void render();
 void loadTextures();
 void initializeTextures();
+void createBuffer();
 
 float RandomFloat(float a, float b);
 /////////////////////////////// main function /////////////////////////////////
@@ -301,6 +306,8 @@ void initialize_geometry() {
     //initialize the texture
     initializeTextures();
     
+    createBuffer();
+    
 
     
     
@@ -343,6 +350,8 @@ void update_projection(GLFWwindow* window, int width, int height) {
     glUniformMatrix4fv(location_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
     glUseProgram(stars_program);
     glUniformMatrix4fv(location_star_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
+    
+    
 }
 
 // update camera transformation
@@ -412,6 +421,35 @@ void loadTextures() {
     textureU = texture_loader::file(resource_path + "textures/9.png");
 
     
+}
+
+void createBuffer(){
+    //Renderbuffer
+    glGenRenderbuffers(1, &rb_handle);
+    glBindRenderbuffer(GL_RENDERBUFFER, rb_handle);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, window_width, window_height);
+    
+    //texture
+    glGenTextures(1, &buffer_texture_object);
+    glBindTexture(GL_TEXTURE_2D, buffer_texture_object);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    glTexImage2D(GL_TEXTURE_2D, 0, GLint(GL_RGBA8), window_width, window_height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+    
+    //Framebuffer
+    glGenFramebuffers(1, &fbo_handle);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_handle);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer_texture_object, 0);
+    
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER_EXT, rb_handle);
+    
+    GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
+    glDrawBuffers(1, draw_buffers);
+    
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        throw std::runtime_error("something went wrong :(");
+    }
 }
 
 void initializeTextures(){
@@ -828,6 +866,7 @@ void quit(int status) {
     // free opengl resources
     glDeleteProgram(simple_program);
     glDeleteProgram(stars_program);
+    glDeleteProgram(screen_program);
     
     for (int i = 0; i < 8; i = i + 1){
         
