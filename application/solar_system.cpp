@@ -127,9 +127,11 @@ void renderPlanetSystem();
 void renderStars();
 void show_fps();
 void render();
+void renderBuffer();
 void loadTextures();
 void initializeTextures();
 void createBuffer();
+void initializeTextureQuad();
 
 float RandomFloat(float a, float b);
 /////////////////////////////// main function /////////////////////////////////
@@ -211,6 +213,8 @@ int main(int argc, char* argv[]) {
     // set up models
     star_model = model{stars, model::POSITION|model::NORMAL};
     initialize_geometry();
+    initializeTextureQuad();
+
     
     // enable depth testing
     glEnable(GL_DEPTH_TEST);
@@ -258,7 +262,7 @@ void initialize_geometry() {
     glEnableVertexAttribArray(0);
     // first attribute is 3 floats with no offset & stride
     glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::POSITION]);
-   
+    
     // activate second attribute on gpu
     glEnableVertexAttribArray(1);
     // second attribute is 3 floats with no offset & stride
@@ -266,7 +270,7 @@ void initialize_geometry() {
     
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, model::TEXCOORD.components, model::TEXCOORD.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::TEXCOORD]);
-
+    
     // generate generic buffer
     glGenBuffers(1, &planet_object.element_BO);
     // bind this as an vertex array buffer containing all attributes
@@ -306,9 +310,7 @@ void initialize_geometry() {
     //initialize the texture
     initializeTextures();
     
-    createBuffer();
     
-
     
     
 }
@@ -317,20 +319,60 @@ void initialize_geometry() {
 // render model
 void render() {
     
-    
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_handle);
     renderPlanetSystem();
     renderStars();
     
+    glBindFramebuffer(GL_FRAMEBUFFER, rb_handle);
+    renderBuffer();
     
     
 }
 
+
+void renderBuffer(){
+    
+    glUseProgram(screen_program);
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, buffer_texture_object);
+    glUniform1i(glGetUniformLocation(screen_program, "texSampler"), 0);
+    
+    glBindVertexArray(buffer_texture_object);
+    utils::validate_program(screen_program);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    
+    
+}
+
+void initializeTextureQuad(){
+    
+    std::vector<GLfloat> vertices {-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,1.0f, -1.0f, 0.0f, 1.0f, 0.0f,-1.0f, 1.0f, 0.0f, 0.0f, 1.0f,1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
+    
+    glGenVertexArrays(1, &screen_quad.vertex_AO);
+    glBindVertexArray(screen_quad.vertex_AO);
+    glGenBuffers(1, &screen_quad.vertex_AO);
+    glBindBuffer(GL_ARRAY_BUFFER, screen_quad.vertex_BO);
+    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(GLsizei(sizeof(float) * vertices.size())), vertices.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    int offset_a = 0 * sizeof(GLfloat);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, GLsizei(5 * sizeof(GLfloat)), (const GLvoid*) offset_a);
+    
+    glEnableVertexAttribArray(1);
+    int offset_b = 3 * sizeof(GLfloat);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, GLsizei(5 * sizeof(GLfloat)), (const GLvoid*) offset_b);
+
+}
 ///////////////////////////// update functions ////////////////////////////////
 // update viewport and field of view
 void update_projection(GLFWwindow* window, int width, int height) {
+    
+
     // resize framebuffer
     glViewport(0, 0, width, height);
-    
+    createBuffer();
+
     float aspect = float(width) / float(height);
     float fov_y = camera_fov;
     // if width is smaller, extend vertical fov
@@ -343,19 +385,19 @@ void update_projection(GLFWwindow* window, int width, int height) {
     // upload matrix to gpu
     glUseProgram(simple_program);
     
-    //Do we need to use "out_Color"?
-    //    int loc2 = glGetUniformLocation(simple_program, "out_Color");
-    
-    
     glUniformMatrix4fv(location_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
     glUseProgram(stars_program);
     glUniformMatrix4fv(location_star_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
     
+    glUseProgram(screen_program);
+    glUniformMatrix4fv(glGetUniformLocation(screen_program, "ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(camera_projection));
+    glUniform2f(glGetUniformLocation(simple_program, "size"), GLfloat(width), GLfloat(height));
     
 }
 
 // update camera transformation
 void update_view() {
+    
     // vertices are transformed in camera space, so camera transform must be inverted
     glm::mat4 inv_camera_view = glm::inverse(camera_transform);
     // upload matrix to gpu
@@ -419,11 +461,35 @@ void loadTextures() {
     texture0 = texture_loader::file(resource_path + "textures/0.png");
     texture3_1 = texture_loader::file(resource_path + "textures/3-1.png");
     textureU = texture_loader::file(resource_path + "textures/9.png");
-
+    
     
 }
 
 void createBuffer(){
+    try {
+        
+        // throws exception when compiling was unsuccessfull
+        GLuint new_screen_program = shader_loader::program(resource_path + "shaders/simpleBlinn.vert", resource_path + "shaders/simpleBlinn.frag");
+        
+        // free old shader
+        glDeleteProgram(screen_program);
+        // save new shader
+        screen_program = new_screen_program;
+        // bind shader
+        glUseProgram(screen_program);
+        
+        // upload view uniforms to new shader
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        update_projection(window, width, height);
+        update_view();
+    }
+    catch(std::exception&) {
+        // dont crash, allow another try
+    }
+    
+    
+    
     //Renderbuffer
     glGenRenderbuffers(1, &rb_handle);
     glBindRenderbuffer(GL_RENDERBUFFER, rb_handle);
@@ -450,12 +516,14 @@ void createBuffer(){
     if (status != GL_FRAMEBUFFER_COMPLETE) {
         throw std::runtime_error("something went wrong :(");
     }
+    
+    
 }
 
 void initializeTextures(){
     //USE GL_RGBA if the textures provide an alpha channel
     //somehow not needed yet:    //
-
+    
     glActiveTexture(GL_TEXTURE0);
     glGenTextures(1, &texture_object0);
     glBindTexture(texture0.target, texture_object0);
@@ -476,7 +544,7 @@ void initializeTextures(){
     glTexParameteri(texture2.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
     glTexParameteri(texture2.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
     glTexImage2D(texture2.target , 0 , GLint(GL_RGBA) , texture2.width , texture2.height , 0 , GL_RGBA , texture2.channel_type , texture2.data.data());
-   
+    
     glActiveTexture(GL_TEXTURE0);
     glGenTextures(1, &texture_object3);
     glBindTexture(texture3.target, texture_object3);
@@ -532,11 +600,11 @@ void initializeTextures(){
     glTexParameteri(texture3_1.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
     glTexParameteri(texture3_1.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
     glTexImage2D(texture3_1.target , 0 , GLint(GL_RGBA) , texture3_1.width , texture3_1.height , 0 , GL_RGBA , texture3_1.channel_type , texture3_1.data.data());
-  
-   
-
-
-
+    
+    
+    
+    
+    
 }
 
 void update_starshaders() {
@@ -566,8 +634,6 @@ void update_starshaders() {
 
 void renderStars(){
     
-    
-    
     glUseProgram(stars_program);
     glBindVertexArray(star_object.vertex_AO);
     
@@ -589,17 +655,11 @@ void renderPlanetSystem(){
     glm::mat4 normal_sky_matrix = glm::inverseTranspose(glm::inverse(camera_transform) * sky_matrix);
     glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_sky_matrix));
     
-    
-//    //send position Information of Sun to Shader
-//    glm::vec4 sun_position = ( glm::inverse(camera_transform) * model_matrix) * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f};
-//    glUniform3fv(location_light, 1, glm::value_ptr(sun_position));
-    
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(textureU.target, texture_objectU);
     glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
     
     glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
-    
     
     //sun is rendered
     glm::mat4 model_matrix = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 0.0f});
@@ -683,7 +743,7 @@ void renderPlanetSystem(){
             
             
             
-
+            
             
             glm::mat4 model_matrix = glm::rotate(glm::mat4{}, float(glfwGetTime()+i), glm::vec3{0.0f, 1.0f, 0.0f});
             model_matrix = glm::translate(model_matrix, glm::vec3{4.0f +4*i, 0.0f, -1.0f});
@@ -697,7 +757,7 @@ void renderPlanetSystem(){
             float gColor = 0.0f;
             float bColor = 0.0f;
             switch (i) {
-        
+                    
                 case 1:
                     rColor = 0.9f;
                     gColor = 0.9f;
@@ -758,14 +818,14 @@ void renderPlanetSystem(){
             glUniform3fv(location_color, 1, glm::value_ptr(planetColor));
             
             glUseProgram(simple_program);
-     
+            
             //render texture
             glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
             
             
             glBindVertexArray(planet_object.vertex_AO);
             utils::validate_program(simple_program);
-
+            
             
             
             // draw bound vertex array as triangles using bound shader
