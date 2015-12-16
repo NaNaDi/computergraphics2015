@@ -33,8 +33,8 @@ using namespace gl;
 // vertical field of view of camera
 const float camera_fov = glm::radians(60.0f);
 // initial window dimensions
-const unsigned window_width = 800;
-const unsigned window_height = 800;
+ unsigned window_width = 700;
+ unsigned window_height = 700;
 // the rendering window
 GLFWwindow* window;
 
@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
     // register key input function
     glfwSetKeyCallback(window, key_callback);
     // allow free mouse movement
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     // register resizing function
     glfwSetFramebufferSizeCallback(window, update_projection);
     
@@ -309,7 +309,7 @@ void initialize_geometry() {
     
     //initialize the texture
     initializeTextures();
-    
+    createBuffer();
     
     
     
@@ -318,12 +318,19 @@ void initialize_geometry() {
 /////////////////////////////////////////////////////// render functions /////////////////////////////////////////////////////////////
 // render model
 void render() {
+   
+    
     
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_handle);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     renderPlanetSystem();
     renderStars();
     
-    glBindFramebuffer(GL_FRAMEBUFFER, rb_handle);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     renderBuffer();
     
     
@@ -338,7 +345,7 @@ void renderBuffer(){
     glBindTexture(GL_TEXTURE_2D, buffer_texture_object);
     glUniform1i(glGetUniformLocation(screen_program, "texSampler"), 0);
     
-    glBindVertexArray(buffer_texture_object);
+    glBindVertexArray(screen_quad.vertex_AO);
     utils::validate_program(screen_program);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     
@@ -347,11 +354,15 @@ void renderBuffer(){
 
 void initializeTextureQuad(){
     
-    std::vector<GLfloat> vertices {-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,1.0f, -1.0f, 0.0f, 1.0f, 0.0f,-1.0f, 1.0f, 0.0f, 0.0f, 1.0f,1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
+    std::vector<GLfloat> vertices {
+        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
     
     glGenVertexArrays(1, &screen_quad.vertex_AO);
     glBindVertexArray(screen_quad.vertex_AO);
-    glGenBuffers(1, &screen_quad.vertex_AO);
+    glGenBuffers(1, &screen_quad.vertex_BO);
     glBindBuffer(GL_ARRAY_BUFFER, screen_quad.vertex_BO);
     glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(GLsizei(sizeof(float) * vertices.size())), vertices.data(), GL_STATIC_DRAW);
 
@@ -371,7 +382,6 @@ void update_projection(GLFWwindow* window, int width, int height) {
 
     // resize framebuffer
     glViewport(0, 0, width, height);
-    createBuffer();
 
     float aspect = float(width) / float(height);
     float fov_y = camera_fov;
@@ -382,17 +392,16 @@ void update_projection(GLFWwindow* window, int width, int height) {
     // projection is hor+
     camera_projection = glm::perspective(fov_y, aspect, 0.1f, 1000.0f);
     glm::mat4 inv_camera_view = glm::inverse(camera_transform);
+    
     // upload matrix to gpu
     glUseProgram(simple_program);
-    
     glUniformMatrix4fv(location_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
+    
     glUseProgram(stars_program);
     glUniformMatrix4fv(location_star_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera_projection));
     
     glUseProgram(screen_program);
-    glUniformMatrix4fv(glGetUniformLocation(screen_program, "ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(camera_projection));
-    glUniform2f(glGetUniformLocation(simple_program, "size"), GLfloat(width), GLfloat(height));
-    
+
 }
 
 // update camera transformation
@@ -469,7 +478,7 @@ void createBuffer(){
     try {
         
         // throws exception when compiling was unsuccessfull
-        GLuint new_screen_program = shader_loader::program(resource_path + "shaders/simpleBlinn.vert", resource_path + "shaders/simpleBlinn.frag");
+        GLuint new_screen_program = shader_loader::program(resource_path + "shaders/simple.vert", resource_path + "shaders/simple.frag");
         
         // free old shader
         glDeleteProgram(screen_program);
@@ -905,6 +914,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     else if (key == GLFW_KEY_UP && action == GLFW_PRESS){
         camera_transform = glm::rotate(camera_transform, float(-0.1), glm::vec3{1.0f, 0.0f, 0.0f});
         update_view();
+    }
+    else if (key == GLFW_KEY_7 && action == GLFW_PRESS){
+        glUseProgram(screen_program);
+        glUniform1i(glGetUniformLocation(screen_program, "greyscale"), 1);
     }
 }
 
