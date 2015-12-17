@@ -27,29 +27,24 @@ vec2 vertical_mirror (vec2 coordinates)
 void main() {
     
     vec2 textureCoord = pass_textureCoord;
-    vec4 inColor = texture(texSampler, pass_textureCoord);
-    
-     if (greyscale == 1)
-    {
-        inColor = greyscaleMultiply(inColor);
-
-    }
-    
-     else {
-         FragColor = inColor;
-     }
     
     if (horizMirror == 1)
     {
         textureCoord = horizontal_mirror(textureCoord);
-        
     }
     
     if (verticMirror == 1)
     {
         textureCoord = vertical_mirror(textureCoord);
-        
     }
+    
+    vec4 inColor = texture(texSampler, textureCoord);
+    
+    if (greyscale == 1)
+    {
+        inColor = greyscaleMultiply(inColor);
+    }
+    FragColor = inColor;
     
 }
 
