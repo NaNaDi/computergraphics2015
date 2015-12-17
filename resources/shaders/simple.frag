@@ -8,6 +8,10 @@ uniform vec2 size;
 uniform int greyscale = 0;
 uniform int horizMirror = 0;
 uniform int verticMirror = 0;
+uniform int gausBlur = 0;
+
+uniform float offset[5] = float[]( 0.0, 1.0, 2.0, 3.0, 4.0 );
+uniform float weight[5] = float[]( 0.2270270270, 0.1945945946, 0.1216216216, 0.0540540541, 0.0162162162 );
 
 vec4 greyscaleMultiply (vec4 inColor)
 {
@@ -22,6 +26,16 @@ vec2 horizontal_mirror (vec2 coordinates)
 vec2 vertical_mirror (vec2 coordinates)
 {
     return vec2(coordinates.x, 1.0f-coordinates.y);
+}
+
+void gaussian_blur ()
+{
+    FragColor = texture( texSampler, vec2(gl_FragCoord)/600.0 ) * weight[0];
+    for (int i=1; i<5; i++) {
+        FragColor += texture(texSampler, (vec2(gl_FragCoord)+vec2(0.0, offset[i]) )/600.0 )* weight[i];
+        FragColor += texture(texSampler, (vec2(gl_FragCoord)-vec2(0.0, offset[i]) )/600.0 )* weight[i];
+    }
+    //return inColor;
 }
 
 void main() {
@@ -44,7 +58,14 @@ void main() {
     {
         inColor = greyscaleMultiply(inColor);
     }
+    
     FragColor = inColor;
+    
+    if(gausBlur == 1)
+    {
+        gaussian_blur();
+    }
+    
     
 }
 

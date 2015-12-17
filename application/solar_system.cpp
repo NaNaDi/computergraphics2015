@@ -33,8 +33,8 @@ using namespace gl;
 // vertical field of view of camera
 const float camera_fov = glm::radians(60.0f);
 // initial window dimensions
- unsigned window_width = 700;
- unsigned window_height = 700;
+ unsigned window_width = 600;
+ unsigned window_height = 600;
 // the rendering window
 GLFWwindow* window;
 
@@ -926,6 +926,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     else if (key == GLFW_KEY_9 && action == GLFW_PRESS){
         glUseProgram(screen_program);
         glUniform1i(glGetUniformLocation(screen_program, "verticMirror"), 1);
+    }
+    else if (key == GLFW_KEY_0 && action == GLFW_PRESS){
+        glUseProgram(screen_program);
+        glUniform1i(glGetUniformLocation(screen_program, "gausBlur"), 1);
     }
 }
 
