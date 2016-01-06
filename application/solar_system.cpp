@@ -931,6 +931,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         glUseProgram(screen_program);
         glUniform1i(glGetUniformLocation(screen_program, "gausBlur"), 1);
     }
+    else if (key == GLFW_KEY_C && action == GLFW_PRESS){
+        glUseProgram(screen_program);
+        glUniform1i(glGetUniformLocation(screen_program, "clearAll"), 1);
+    }
 }
 
 // calculate fps and show in window title
