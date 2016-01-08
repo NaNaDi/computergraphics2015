@@ -11,8 +11,10 @@ uniform int verticMirror = 0;
 uniform int gausBlur = 0;
 uniform int clearAll = 0;
 
-uniform float offset[5] = float[]( 0.0, 1.0, 2.0, 3.0, 4.0 );
-uniform float weight[5] = float[]( 0.2270270270, 0.1945945946, 0.1216216216, 0.0540540541, 0.0162162162 );
+uniform float offset_a[5] = float[]( 0.0, 1.0, 2.0, 3.0, 4.0 );
+uniform float offset_b[5] = float[]( 4.0, 3.0, 2.0, 1.0, 0.0 );
+uniform float weight_a[4] = float[]( 0.1945945946, 0.1216216216, 0.0540540541, 0.0162162162 );
+uniform float weight_b[4] = float[]( 0.0162162162, 0.0540540541, 0.1216216216, 0.1945945946 );
 
 vec4 greyscaleMultiply (vec4 inColor)
 {
@@ -29,19 +31,19 @@ vec2 vertical_mirror (vec2 coordinates)
     return vec2(coordinates.x, 1.0f-coordinates.y);
 }
 
-void gaussian_blur ()
+vec4 gaussian_blur (vec4 inColor, vec2 textureCoord)
 {
-    FragColor = texture( texSampler, vec2(gl_FragCoord)/600.0 ) * weight[0];
-    for (int i=1; i<5; i++) {
-        FragColor += texture(texSampler, (vec2(gl_FragCoord)+vec2(0.0, offset[i]) )/600.0 )* weight[i];
-        FragColor += texture(texSampler, (vec2(gl_FragCoord)-vec2(0.0, offset[i]) )/600.0 )* weight[i];
+    inColor = texture(texSampler, vec2(textureCoord.x, textureCoord.y)) * 0.2270270270;
+    for (int i=0; i<4; i++) {
+        inColor += texture(texSampler, (vec2(textureCoord.x-(offset_a[i]/600), textureCoord.y-(offset_a[i]/600))))* weight_a[i];
+        inColor += texture(texSampler, (vec2(textureCoord.x+(offset_b[i]/600), textureCoord.y+(offset_b[i]/600))))* weight_b[i];
     }
-    //return inColor;
+    return inColor;
 }
 
 void main() {
-    
     vec2 textureCoord = pass_textureCoord;
+    
     
     if (horizMirror == 1)
     {
@@ -55,23 +57,25 @@ void main() {
     
     vec4 inColor = texture(texSampler, textureCoord);
     
+    if(gausBlur == 1)
+    {
+        inColor = gaussian_blur(inColor, textureCoord);
+    }
+    
+        //FragColor = inColor;
+    
     if (greyscale == 1)
     {
         inColor = greyscaleMultiply(inColor);
     }
     
-    FragColor = inColor;
+        FragColor = inColor;
     
-    if(gausBlur == 1)
-    {
-        gaussian_blur();
-    }
-    
-    if (clearAll == 1)
-    {
-        textureCoord = pass_textureCoord;
-        FragColor =  texture(texSampler, textureCoord);
-    }
+//    if (clearAll == 1)
+//    {
+//        textureCoord = pass_textureCoord;
+//        FragColor =  texture(texSampler, textureCoord);
+//    }
     
 }
 

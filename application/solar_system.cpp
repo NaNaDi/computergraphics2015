@@ -110,6 +110,12 @@ GLint location_light = -1;
 GLuint rb_handle;
 GLuint fbo_handle;
 
+
+bool greyScaleOn = false;
+bool horizMirrorOn = false;
+bool verticMirrorOn = false;
+bool gausBlurOn = false;
+
 // path to the resource folders
 std::string resource_path{};
 
@@ -917,19 +923,48 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
     else if (key == GLFW_KEY_7 && action == GLFW_PRESS){
         glUseProgram(screen_program);
-        glUniform1i(glGetUniformLocation(screen_program, "greyscale"), 1);
+        if (greyScaleOn != true){
+            glUniform1i(glGetUniformLocation(screen_program, "greyscale"), 1);
+            greyScaleOn = true;
+        }
+        else
+        { glUniform1i(glGetUniformLocation(screen_program, "greyscale"), 0);
+            greyScaleOn = false;
+}
     }
     else if (key == GLFW_KEY_8 && action == GLFW_PRESS){
         glUseProgram(screen_program);
-        glUniform1i(glGetUniformLocation(screen_program, "horizMirror"), 1);
+        if (!horizMirrorOn){
+            glUniform1i(glGetUniformLocation(screen_program, "horizMirror"), 1);
+            horizMirrorOn = true;
+        }
+        else{
+         glUniform1i(glGetUniformLocation(screen_program, "horizMirror"), 0);
+            horizMirrorOn = false;
+        }
     }
     else if (key == GLFW_KEY_9 && action == GLFW_PRESS){
         glUseProgram(screen_program);
-        glUniform1i(glGetUniformLocation(screen_program, "verticMirror"), 1);
+        if (!verticMirrorOn){
+            glUniform1i(glGetUniformLocation(screen_program, "verticMirror"), 1);
+            verticMirrorOn = true;
+        }
+        else{
+            glUniform1i(glGetUniformLocation(screen_program, "verticMirror"), 0);
+            verticMirrorOn = false;
+        }
     }
     else if (key == GLFW_KEY_0 && action == GLFW_PRESS){
         glUseProgram(screen_program);
-        glUniform1i(glGetUniformLocation(screen_program, "gausBlur"), 1);
+        if(!gausBlurOn){
+            glUniform1i(glGetUniformLocation(screen_program, "gausBlur"), 1);
+            gausBlurOn = true;
+        }
+        else {
+            glUniform1i(glGetUniformLocation(screen_program, "gausBlur"), 0);
+        
+            gausBlurOn = false;}
+        
     }
     else if (key == GLFW_KEY_C && action == GLFW_PRESS){
         glUseProgram(screen_program);
