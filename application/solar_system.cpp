@@ -58,6 +58,17 @@ model moon_model{};
 model star_model{};
 model planet_model{};
 
+    enum GBUFFER_TEXTURE_TYPE {
+    GBUFFER_TEXTURE_TYPE_POSITION,
+    GBUFFER_TEXTURE_TYPE_DIFFUSE,
+    GBUFFER_TEXTURE_TYPE_NORMAL,
+    GBUFFER_TEXTURE_TYPE_TEXCOORD,
+    GBUFFER_NUM_TEXTURES
+};
+
+GLuint m_fbo;
+GLuint m_textures[GBUFFER_NUM_TEXTURES];
+GLuint m_depthTexture;
 
 // holds gpu representation of model
 struct model_object {
@@ -78,7 +89,7 @@ model_object planets[8] = {planet_object,planet_object2,planet_object3,planet_ob
 
 //texture struct to store textures
 
-GLuint texture_object0, texture_object1, texture_object2, texture_object3, texture_object3_1, texture_object4, texture_object5, texture_object6, texture_object7, texture_object8, texture_objectU, buffer_texture_object;
+GLuint texture_object0, texture_object1, texture_object2, texture_object3, texture_object3_1, texture_object4, texture_object5, texture_object6, texture_object7, texture_object8, texture_objectU, buffer_texture_object, depth_texture_object;
 texture texture0;
 texture texture1;
 texture texture2;
@@ -529,6 +540,39 @@ void createBuffer(){
     
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
+        throw std::runtime_error("something went wrong :(");
+    }
+    
+    //++++++++++++++++Deferred Shading Buffers+++++++++++++++++++
+    
+//    //Renderbuffer
+//    glGenRenderbuffers(1, &rb_handle);
+//    glBindRenderbuffer(GL_RENDERBUFFER, rb_handle);
+//    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, window_width, window_height);
+//    
+//    //texture
+//    glGenTextures(1, &depth_texture_object);
+//    glBindTexture(GL_TEXTURE_2D, buffer_texture_object);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+//    glTexImage2D(GL_TEXTURE_2D, 0, GLint(GL_RGBA8), window_width, window_height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+    
+    //Framebuffer
+    glGenFramebuffers(1, &fbo_handle);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_handle);
+    glGenTextures(ARRAY_SIZE(m_textures), m_textures);
+    
+    
+    
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer_texture_object, 0);
+    
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER_EXT, rb_handle);
+    
+    GLenum draw_buffers_b[1] = {GL_COLOR_ATTACHMENT0};
+    glDrawBuffers(1, draw_buffers_b);
+    
+    GLenum status_b = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status_b != GL_FRAMEBUFFER_COMPLETE) {
         throw std::runtime_error("something went wrong :(");
     }
     
